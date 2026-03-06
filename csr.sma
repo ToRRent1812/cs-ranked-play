@@ -32,7 +32,7 @@
 #include <lang>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "0.7"
+#define VERSION    "0.7.1"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -1294,12 +1294,12 @@ public OnMapEnd()
         {
             new iShield = (iMyRank < RANK_COUNT) ? ShieldLossPct[iMyRank] : 100
             iChange = (iChange * iShield) / 100
+            if(iChange < -125) iChange = MMR_MAX_LOSE
+            if(iChange > 125) iChange = MMR_MAX_GAIN
         }
 
         new iResult = clamp(g_iPoints[id] + iChange, g_iPeakPoints[id] / 2, MMR_CAP)
         //If for whatever reason something went wrong with math, cap the maximum MMR change
-        if(iResult < -125) iResult = MMR_MAX_LOSE
-        if(iResult > 125) iResult = MMR_MAX_GAIN
         iNewPoints[id] = iResult
     }
 
