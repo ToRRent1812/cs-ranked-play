@@ -33,7 +33,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "0.9"
+#define VERSION    "0.9.1"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -785,12 +785,12 @@ public showStatus(id)
         if (g_ifriend[id] == 1)
         {
             set_hudmessage(color1, 50, color2, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
-            ShowSyncHudMsg(id, g_statussync, "-== /%s/ %s ==^n%d HP %d AP", s_RankName, s_targetname, get_user_health(pid), get_user_armor(pid))
+            ShowSyncHudMsg(id, g_statussync, "-== [%s] %s ==-^n%d HP %d AP", s_RankName, s_targetname, get_user_health(pid), get_user_armor(pid))
         }
         else
         {
             set_hudmessage(color1, 50, color2, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
-            ShowSyncHudMsg(id, g_statussync, "-== /%s/ %s ==-", s_RankName, s_targetname)
+            ShowSyncHudMsg(id, g_statussync, "-== [%s] %s ==-", s_RankName, s_targetname)
         }
     }
 }
@@ -802,7 +802,7 @@ public HUD_ShowSelf(id)
 
     if (g_iMapsPlayed[id] < PLACEMENT_MAPS)
     {
-        formatex(szLine, charsmax(szLine), "%L", id, "HUD_PLACEMENT", g_iMapsPlayed[id], PLACEMENT_MAPS, g_iCurrentSeason)
+        formatex(szLine, charsmax(szLine), "%L", id, "HUD_PLACEMENT", g_iCurrentSeason, g_iMapsPlayed[id], PLACEMENT_MAPS)
     }
     else
     {
