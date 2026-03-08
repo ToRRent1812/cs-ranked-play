@@ -4,7 +4,11 @@
 Competitive ranking system plugin for CS 1.6 and Czero  
 Inspired by ranked matchmaking in Valorant, CS2, R6: Siege and Halo  
 _____________________
-
+#### DEMONSTRATION
+You can test the plugin with bots on my servers  
+1.6: ```connect 51.68.155.216:27015```  
+CZero: ```connect 51.68.155.216:27016```  
+_____________________
 #### HOW IT WORKS
 
 Plugin rates players by earning hidden points each round based on their performance  (damage, kills, objectives, etc)  
