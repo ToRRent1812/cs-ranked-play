@@ -19,6 +19,9 @@ __Seasons__ - Each season is an independent leaderboard
 Previous season data is preserved in database. Server admins launch new ranked season using admin command.
 _____________________
 #### SCREENSHOTS
+<img width="972" height="694" alt="Zrzut ekranu_20260308_152434" src="https://github.com/user-attachments/assets/d20953cc-7411-4844-968c-e485bd04f456" />
+<img width="1372" height="1006" alt="Zrzut ekranu_20260308_152535" src="https://github.com/user-attachments/assets/d1e6145d-b19d-4e43-ab4b-883a4b46ad66" />
+<img width="1360" height="1006" alt="Zrzut ekranu_20260308_153349" src="https://github.com/user-attachments/assets/ff5f466d-92d2-4eb2-be20-cfdd255753fe" />
 
 _____________________
 #### HIDDEN SCORING SYSTEM
