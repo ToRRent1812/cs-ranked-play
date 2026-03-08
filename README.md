@@ -26,6 +26,7 @@ _____________________
 <img width="972" height="694" alt="Zrzut ekranu_20260308_152434" src="https://github.com/user-attachments/assets/d20953cc-7411-4844-968c-e485bd04f456" />
 <img width="1372" height="1006" alt="Zrzut ekranu_20260308_152535" src="https://github.com/user-attachments/assets/d1e6145d-b19d-4e43-ab4b-883a4b46ad66" />
 <img width="1360" height="1006" alt="Zrzut ekranu_20260308_153349" src="https://github.com/user-attachments/assets/ff5f466d-92d2-4eb2-be20-cfdd255753fe" />
+<img width="590" height="128" alt="Zrzut ekranu_20260308_200938" src="https://github.com/user-attachments/assets/4eec219e-45fd-4b4d-b0d8-1cecfff02cde" />
 
 _____________________
 #### HIDDEN SCORING SYSTEM
