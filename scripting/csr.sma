@@ -34,7 +34,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "0.9.3"
+#define VERSION    "0.9.5"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -66,7 +66,7 @@
 #define SCORE_ROUND_LOST    -1
 #define SCORE_DEATH         -1
 #define SCORE_POSITIVE_KD    1
-#define SCORE_NEGATIVE_KD   -1
+#define SCORE_NEGATIVE_KD   -2
 #define BAD_WEAPON_MIN_DMG  50
 #define MAX_KILLSTREAK       5
 
@@ -159,7 +159,6 @@ new g_cvarDBHost
 new g_cvarDBUser
 new g_cvarDBPass
 new g_cvarDBName
-new g_cvarFancyResults
 new g_cvarDoubleGain
 new g_cvarKarPort
 new g_szResultsHTML[16384]
@@ -183,7 +182,6 @@ public plugin_init()
     g_cvarDmgCap = register_cvar("rank_dmg_cap","550",FCVAR_SERVER) // Maximum damage that counts towards player score in a single round
     g_cvarDoubleGain = register_cvar("rank_double_gain","0",FCVAR_SERVER) // 1 = double MMR gain bonus event
     g_cvarWarmupTime = register_cvar("rank_warmup_time","45",FCVAR_SERVER) // Warmup time in seconds
-    g_cvarFancyResults = register_cvar("rank_fancy_results","1",FCVAR_SERVER|FCVAR_PROTECTED) // 1 = full HTML MOTD (requires open port from rank_karlib_port), 0 = plain text MOTD(Limited)
     g_cvarKarPort = register_cvar("rank_karlib_port","8090",FCVAR_SERVER|FCVAR_PROTECTED) // Port to use MOTD webpages
     g_cvarDBType = register_cvar("rank_db_type","sqlite",FCVAR_SERVER|FCVAR_PROTECTED) // Saving type: "sqlite" or "mariadb"
     g_cvarDBHost = register_cvar("rank_db_host","localhost",FCVAR_SERVER|FCVAR_PROTECTED) // Database host
@@ -239,7 +237,7 @@ public plugin_end()
 // KarLib stuff
 public plugin_cfg()
 {
-    if (get_pcvar_num(g_cvarFancyResults))
+    if (!g_bKarLibLoaded)
     {
         new iPort = get_pcvar_num(g_cvarKarPort)
         if (iPort > 0 && iPort < 65536)
@@ -248,7 +246,13 @@ public plugin_cfg()
             g_bKarLibLoaded = true
             server_print("[CSR] KarLib HTTP server started on port %d", iPort)
         }
+        else
+        {
+            log_amx("[CSR] ERROR: rank_karlib_port is not set.")
+        }
     }
+
+    set_task(5.0, "Task_BuildTopHTML")
 }
 
 public karlib_mini_server_req(const ip[], const params[], const values[], const path[])
@@ -264,10 +268,36 @@ public karlib_mini_server_req(const ip[], const params[], const values[], const 
     }
     else if (containi(path, "csr_top") != -1)
     {
-        if (g_szTopHTML[0] != EOS)
+        // Check for ?season=N — if present and not current, serve that season
+        new iReqSeason = 0
+        new iSemicolon = contain(params, "season")
+        if (iSemicolon != -1)
         {
-            copy(szResp, charsmax(szResp), g_szTopHTML)
+            // params and values are semicolon-delimited; count semicolons before match to find index
+            new iIdx = 0
+            for (new i = 0; i < iSemicolon; i++)
+                if (params[i] == ';') iIdx++
+
+            // Extract iIdx-th token from values
+            new szVal[12]
+            new iCur = 0, iStart = 0
+            for (new j = 0; values[j] != EOS; j++)
+            {
+                if (iCur == iIdx)
+                {
+                    iStart = j
+                    break
+                }
+                if (values[j] == ';') iCur++
+            }
+            copyc(szVal, charsmax(szVal), values[iStart], ';')
+            iReqSeason = str_to_num(szVal)
         }
+
+        if (iReqSeason > 0 && iReqSeason != g_iCurrentSeason)
+            BuildSeasonHTML(iReqSeason, szResp, charsmax(szResp))
+        else if (g_szTopHTML[0] != EOS)
+            copy(szResp, charsmax(szResp), g_szTopHTML)
         else
             copy(szResp, charsmax(szResp), "<body bgcolor=#111><font color=#aaa>No top data yet.</font></body>")
     }
@@ -742,8 +772,7 @@ public Task_RefreshHUD(id)
             }
             else
             {
-                new iRank = GetPlayerRank(g_iPoints[iTarget])
-                formatex(szLine, charsmax(szLine), "%L", pid, "HUD_WATCH_RANKED", RankNames[iRank])
+                formatex(szLine, charsmax(szLine), "%L", pid, "HUD_WATCH_RANKED", RankNames[GetPlayerRank(g_iPoints[iTarget])], g_iPoints[iTarget], GetGlobalPosition(iTarget))
             }
             set_hudmessage(255, 255, 200, -1.0, 0.85, 0, 0.0, 1.8, 0.3, 0.5, 1)
             show_hudmessage(pid, szLine)
@@ -826,147 +855,264 @@ public CmdSay(id, level, cid)
     while (szText[start] == ' ' || szText[start] == ':') start++
     if (szText[start] == '"') start++
 
-    if (equali(szText[start], "!top") || equali(szText[start], "/top"))
+    if (equali(szText[start], "!top", 4) || equali(szText[start], "/top", 4))
     {
-        ShowTop(id)
+        new iReqSeason = 0
+        new szArg[8]
+        new iArgStart = start + 4
+        while (szText[iArgStart] == ' ') iArgStart++
+        if (szText[iArgStart] != EOS)
+        {
+            copy(szArg, charsmax(szArg), szText[iArgStart])
+            iReqSeason = str_to_num(szArg)
+        }
+        ShowTopMOTD(id, iReqSeason)
         return PLUGIN_HANDLED
     }
     return PLUGIN_CONTINUE
 }
 
-ShowTop(id)
+BuildSeasonHTML(iSeason, szOut[], iOutLen, iLimit = 10)
 {
     if (g_hSQL == Empty_Handle) return
 
-    new Handle:hSeasons = SQL_PrepareQuery(g_hSQL, "%s",
-        "SELECT season, label FROM csr_seasons ORDER BY season ASC")
-    if (hSeasons == Empty_Handle) return
-    if (!SQL_Execute(hSeasons))
+    static szTmp[512]
+    static szRows[30][256]
+    new iTotal = 0
+    new bool:bHasRows = false
+
+    new szQ[256]
+    formatex(szQ, charsmax(szQ),
+        "SELECT name,steamid,points FROM csr_players WHERE maps_played>=%d AND season=%d ORDER BY points DESC LIMIT %d",
+        PLACEMENT_MAPS, iSeason, iLimit)
+
+    new Handle:hTop = SQL_PrepareQuery(g_hSQL, "%s", szQ)
+    if (hTop != Empty_Handle && SQL_Execute(hTop))
     {
-        SQL_FreeHandle(hSeasons)
-        return
+        new iRow = 1
+        while (SQL_MoreResults(hTop) && iRow <= iLimit)
+        {
+            new szName[64], szSteam[35], iPoints
+            SQL_ReadResult(hTop, 0, szName,  charsmax(szName))
+            SQL_ReadResult(hTop, 1, szSteam, charsmax(szSteam))
+            iPoints = SQL_ReadResult(hTop, 2)
+
+            new szDisplay[64]
+            copy(szDisplay, charsmax(szDisplay), (szName[0] != EOS) ? szName : szSteam)
+
+            new szPos[32]
+            switch (iRow)
+            {
+                case 1:  formatex(szPos, charsmax(szPos), "<td class='p g'>&#9733;</td>")
+                case 2:  formatex(szPos, charsmax(szPos), "<td class='p s'>&#9733;</td>")
+                case 3:  formatex(szPos, charsmax(szPos), "<td class='p b'>&#9733;</td>")
+                default: formatex(szPos, charsmax(szPos), "<td class='p'>%d</td>", iRow)
+            }
+
+            formatex(szRows[iTotal], charsmax(szRows[]), "<tr>%s<td>%s</td><td>%s</td><td class='m'>%d</td></tr>",
+                szPos, szDisplay, RankNames[GetPlayerRank(iPoints)], iPoints)
+
+            bHasRows = true
+            iTotal++
+            iRow++
+            SQL_NextRow(hTop)
+        }
+        SQL_FreeHandle(hTop)
     }
 
-    new iSeasonNums[32], szSeasonLabels[32][64], iNumSeasons
-    while (SQL_MoreResults(hSeasons) && iNumSeasons < 32)
-    {
-        iSeasonNums[iNumSeasons] = SQL_ReadResult(hSeasons, 0)
-        SQL_ReadResult(hSeasons, 1, szSeasonLabels[iNumSeasons], 63)
-        iNumSeasons++
-        SQL_NextRow(hSeasons)
-    }
-    SQL_FreeHandle(hSeasons)
+    new szLabel[64]
+    new szLQ[128]
+    formatex(szLQ, charsmax(szLQ), "SELECT label FROM csr_seasons WHERE season=%d", iSeason)
+    new Handle:hLbl = SQL_PrepareQuery(g_hSQL, "%s", szLQ)
+    if (hLbl != Empty_Handle && SQL_Execute(hLbl) && SQL_MoreResults(hLbl))
+        SQL_ReadResult(hLbl, 0, szLabel, charsmax(szLabel))
+    else
+        formatex(szLabel, charsmax(szLabel), "Season %d", iSeason)
+    if (hLbl != Empty_Handle) SQL_FreeHandle(hLbl)
 
-    if (iNumSeasons == 0) return
+    static szHTML[16384]
+    szHTML[0] = EOS
+
+    add(szHTML, charsmax(szHTML), "<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.w{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
+    formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><div class='w'>", szLabel)
+    add(szHTML, charsmax(szHTML), szTmp)
+
+    if (!bHasRows)
+    {
+        add(szHTML, charsmax(szHTML), "<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        add(szHTML, charsmax(szHTML), "<tr><td colspan='4' class='nil'>No data...</td></tr>")
+        add(szHTML, charsmax(szHTML), "</tbody></table></div>")
+    }
+    else
+    {
+        add(szHTML, charsmax(szHTML), "<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        for (new r = 0; r < 15 && r < iTotal; r++)
+            add(szHTML, charsmax(szHTML), szRows[r])
+        add(szHTML, charsmax(szHTML), "</tbody></table></div>")
+
+        if (iTotal > 15)
+        {
+            add(szHTML, charsmax(szHTML), "<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+            for (new r = 15; r < iTotal; r++)
+                add(szHTML, charsmax(szHTML), szRows[r])
+            add(szHTML, charsmax(szHTML), "</tbody></table></div>")
+        }
+    }
+
+    add(szHTML, charsmax(szHTML), "</div>")
+    copy(szOut, iOutLen, szHTML)
+}
+
+BuildTopHTML()
+{
+    if (g_hSQL == Empty_Handle) return
 
     static szHTML[16384]
     static szTmp[512]
     szHTML[0] = EOS
 
-    _H("<script>var m=location.search.match(/r=(\\d+)/),r=m?+m[1]:0;if(r<3)setTimeout(function(){location.href=location.pathname+'?r='+(r+1)},1500)</script>")
-    _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.t{display:flex;flex-wrap:wrap;gap:2px;padding:3px 6px 0;border-bottom:2px solid #333}.tb{padding:3px 9px;cursor:pointer;border-radius:3px 3px 0 0;background:#181818;color:#888;border:1px solid #2a2a2a;border-bottom:none;font-size:11px}.tb.on{background:#222;color:#f4a800;border-color:#444}.pn{display:none}.pn.on{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}</style>")
+    new szLabel[64]
+    new szLQ[128]
+    formatex(szLQ, charsmax(szLQ), "SELECT label FROM csr_seasons WHERE season=%d", g_iCurrentSeason)
+    new Handle:hLbl = SQL_PrepareQuery(g_hSQL, "%s", szLQ)
+    if (hLbl != Empty_Handle && SQL_Execute(hLbl) && SQL_MoreResults(hLbl))
+        SQL_ReadResult(hLbl, 0, szLabel, charsmax(szLabel))
+    else
+        formatex(szLabel, charsmax(szLabel), "Season %d", g_iCurrentSeason)
+    if (hLbl != Empty_Handle) SQL_FreeHandle(hLbl)
 
-    _H("<div class='t'>")
-    for (new s = 0; s < iNumSeasons; s++)
+    _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.w{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
+    formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><div class='w'>", szLabel)
+    _H(szTmp)
+
+    new szQ[256]
+    formatex(szQ, charsmax(szQ),
+        "SELECT name,steamid,points FROM csr_players WHERE maps_played>=%d AND season=%d ORDER BY points DESC LIMIT 30",
+        PLACEMENT_MAPS, g_iCurrentSeason)
+
+    new Handle:hTop = SQL_PrepareQuery(g_hSQL, "%s", szQ)
+    new bool:bHasRows = false
+    static szRows[30][256]
+    new iTotal = 0
+
+    if (hTop != Empty_Handle && SQL_Execute(hTop))
     {
-        new bool:bCur = (iSeasonNums[s] == g_iCurrentSeason)
-        formatex(szTmp, charsmax(szTmp), "<div class='tb%s' onclick='show(%d)'>%s</div>",
-            bCur ? " on" : "", iSeasonNums[s], szSeasonLabels[s])
-        _H(szTmp)
-    }
-    _H("</div>")
-
-    for (new s = 0; s < iNumSeasons; s++)
-    {
-        new iSeason = iSeasonNums[s]
-        new bool:bCur = (iSeason == g_iCurrentSeason)
-        formatex(szTmp, charsmax(szTmp), "<div id='p%d' class='pn%s'>", iSeason, bCur ? " on" : "")
-        _H(szTmp)
-
-        new szQ[256]
-        formatex(szQ, charsmax(szQ),
-            "SELECT name,steamid,points FROM csr_players WHERE maps_played>=%d AND season=%d ORDER BY points DESC LIMIT 30",
-            PLACEMENT_MAPS, iSeason)
-
-        new Handle:hTop = SQL_PrepareQuery(g_hSQL, "%s", szQ)
-        new bool:bHasRows = false
-
-        _H("<table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
-
-        if (hTop != Empty_Handle && SQL_Execute(hTop))
+        new iRow = 1
+        while (SQL_MoreResults(hTop) && iRow <= 30)
         {
-            new iRow = 1
-            while (SQL_MoreResults(hTop) && iRow <= 30)
+            new szName[64], szSteam[35], iPoints
+            SQL_ReadResult(hTop, 0, szName,  charsmax(szName))
+            SQL_ReadResult(hTop, 1, szSteam, charsmax(szSteam))
+            iPoints = SQL_ReadResult(hTop, 2)
+
+            new szDisplay[64]
+            copy(szDisplay, charsmax(szDisplay), (szName[0] != EOS) ? szName : szSteam)
+
+            new szPos[32]
+            switch (iRow)
             {
-                new szName[64], szSteam[35], iPoints
-                SQL_ReadResult(hTop, 0, szName,  charsmax(szName))
-                SQL_ReadResult(hTop, 1, szSteam, charsmax(szSteam))
-                iPoints = SQL_ReadResult(hTop, 2)
-
-                new szDisplay[64]
-                copy(szDisplay, charsmax(szDisplay), (szName[0] != EOS) ? szName : szSteam)
-
-                new szPos[32]
-                switch (iRow)
-                {
-                    case 1:  formatex(szPos, charsmax(szPos), "<td class='p g'>&#9733;</td>")
-                    case 2:  formatex(szPos, charsmax(szPos), "<td class='p s'>&#9733;</td>")
-                    case 3:  formatex(szPos, charsmax(szPos), "<td class='p b'>&#9733;</td>")
-                    default: formatex(szPos, charsmax(szPos), "<td class='p'>%d</td>", iRow)
-                }
-
-                formatex(szTmp, charsmax(szTmp), "<tr>%s<td>%s</td><td>%s</td><td class='m'>%d</td></tr>",
-                    szPos, szDisplay, RankNames[GetPlayerRank(iPoints)], iPoints)
-                _H(szTmp)
-
-                bHasRows = true
-                iRow++
-                SQL_NextRow(hTop)
+                case 1:  formatex(szPos, charsmax(szPos), "<td class='p g'>&#9733;</td>")
+                case 2:  formatex(szPos, charsmax(szPos), "<td class='p s'>&#9733;</td>")
+                case 3:  formatex(szPos, charsmax(szPos), "<td class='p b'>&#9733;</td>")
+                default: formatex(szPos, charsmax(szPos), "<td class='p'>%d</td>", iRow)
             }
-            SQL_FreeHandle(hTop)
-        }
 
-        if (!bHasRows)
-        {
-            formatex(szTmp, charsmax(szTmp), "<tr><td colspan='4' class='nil'>Waiting for data...</td></tr>")
-            _H(szTmp)
-        }
+            formatex(szRows[iTotal], charsmax(szRows[]), "<tr>%s<td>%s</td><td>%s</td><td class='m'>%d</td></tr>",
+                szPos, szDisplay, RankNames[GetPlayerRank(iPoints)], iPoints)
 
-        _H("</tbody></table></div>")
+            bHasRows = true
+            iTotal++
+            iRow++
+            SQL_NextRow(hTop)
+        }
+        SQL_FreeHandle(hTop)
     }
 
-    _H("<script>function show(n){document.querySelectorAll('.pn,.tb').forEach(function(e){e.classList.remove('on')});var p=document.getElementById('p'+n);if(p)p.classList.add('on');document.querySelectorAll('.tb').forEach(function(t){if(t.getAttribute('onclick')==='show('+n+')')t.classList.add('on');});}</script>")
-
-    // Cache HTML for KarLib to serve
-    copy(g_szTopHTML, charsmax(g_szTopHTML), szHTML)
-
-    new szMotd[512]
-    if (g_bKarLibLoaded)
+    if (!bHasRows)
     {
-        new szServerIP[32]
-        get_cvar_string("net_address", szServerIP, charsmax(szServerIP))
-        new iColon = contain(szServerIP, ":")
-        if (iColon != -1) szServerIP[iColon] = EOS
-
-        new iPort = get_pcvar_num(g_cvarKarPort)
-        formatex(szMotd, charsmax(szMotd),
-            "<style>*{margin:0;padding:0}body,html{height:100%%}iframe{width:100%%;height:100%%;border:none}</style><iframe src='http://%s:%d/csr_top'></iframe>",
-            szServerIP, iPort)
-        show_motd(id, szMotd, "Ranked Play - Top")
+        _H("<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        _H("<tr><td colspan='4' class='nil'>Waiting for data...</td></tr>")
+        _H("</tbody></table></div>")
     }
     else
     {
-        new szFile[128]
-        get_localinfo("amxx_datadir", szFile, charsmax(szFile))
-        add(szFile, charsmax(szFile), "/csr_top.html")
-        new iFile = fopen(szFile, "wt")
-        if (iFile)
+        _H("<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        for (new r = 0; r < 15 && r < iTotal; r++)
+            _H(szRows[r])
+        _H("</tbody></table></div>")
+
+        if (iTotal > 15)
         {
-            fputs(iFile, szHTML)
-            fclose(iFile)
-            show_motd(id, szFile, "Ranked Play - Top")
+            _H("<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+            for (new r = 15; r < iTotal; r++)
+                _H(szRows[r])
+            _H("</tbody></table></div>")
         }
     }
+
+    _H("</div>")
+
+    copy(g_szTopHTML, charsmax(g_szTopHTML), szHTML)
+}
+
+public Task_BuildTopHTML()
+{
+    BuildTopHTML()
+}
+
+ShowTopMOTD(id, iReqSeason)
+{
+    new szTitle[64]
+
+    if (iReqSeason > 0 && iReqSeason != g_iCurrentSeason)
+    {
+        new szChkQ[96]
+        formatex(szChkQ, charsmax(szChkQ), "SELECT season FROM csr_seasons WHERE season=%d", iReqSeason)
+        new Handle:hChk = SQL_PrepareQuery(g_hSQL, "%s", szChkQ)
+        new bool:bExists = (hChk != Empty_Handle && SQL_Execute(hChk) && SQL_MoreResults(hChk))
+        if (hChk != Empty_Handle) SQL_FreeHandle(hChk)
+
+        if (!bExists)
+        {
+            client_print_color(id, print_team_default, "%l", LANG_PLAYER, "RANK_WRONG_SEASON", iReqSeason)
+            return
+        }
+
+        formatex(szTitle, charsmax(szTitle), "Ranked Play - Season %d", iReqSeason)
+
+        if (g_bKarLibLoaded)
+        {
+            new szServerIP[32]
+            get_cvar_string("net_address", szServerIP, charsmax(szServerIP))
+            new iColon = contain(szServerIP, ":")
+            if (iColon != -1) szServerIP[iColon] = EOS
+
+            new iPort = get_pcvar_num(g_cvarKarPort)
+            new szMotd[512]
+            formatex(szMotd, charsmax(szMotd),
+                "<style>*{margin:0;padding:0}body,html{height:100%%}iframe{width:100%%;height:100%%;border:none}</style><iframe src='http://%s:%d/csr_top?season=%d'></iframe>",
+                szServerIP, iPort, iReqSeason)
+            show_motd(id, szMotd, szTitle)
+        }
+        return
+    }
+
+    if (g_szTopHTML[0] == EOS) BuildTopHTML()
+    if (g_szTopHTML[0] == EOS) return
+
+    formatex(szTitle, charsmax(szTitle), "Ranked Play - Season %d", g_iCurrentSeason)
+
+    new szServerIP[32]
+    get_cvar_string("net_address", szServerIP, charsmax(szServerIP))
+    new iColon = contain(szServerIP, ":")
+    if (iColon != -1) szServerIP[iColon] = EOS
+
+    new iPort = get_pcvar_num(g_cvarKarPort)
+    new szMotd[512]
+    formatex(szMotd, charsmax(szMotd),
+        "<style>*{margin:0;padding:0}body,html{height:100%%}iframe{width:100%%;height:100%%;border:none}</style><iframe src='http://%s:%d/csr_top'></iframe>",
+        szServerIP, iPort)
+    show_motd(id, szMotd, szTitle)
 }
 
 // ROUND EVENTS
@@ -1329,177 +1475,100 @@ public Task_MapEnd()
     static szTmp[256]
     szHTML[0] = EOS
 
-    new bool:bFancy = (get_pcvar_num(g_cvarFancyResults) != 0)
 
-    if (bFancy)
+    _H("<!DOCTYPE html><html><head><meta charset='utf-8'><style>")
+    _H("*{box-sizing:border-box;margin:0;padding:0}")
+    _H("body{background:#0d0d0d;color:#ccc;font-family:Arial,sans-serif;font-size:13px}")
+    _H("table{width:100%;border-collapse:collapse}")
+    _H("th{background:#181818;color:#f4a800;padding:5px 8px;text-align:left;font-size:11px;border-bottom:1px solid #333}")
+    _H("td{padding:5px 8px;border-bottom:1px solid #181818}")
+    _H("tr:hover td{background:#141414}")
+    _H(".pos{width:28px;text-align:center;font-weight:bold}")
+    _H(".g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}")
+    _H(".MMR{color:#f4a800;font-weight:bold}.rk{color:#7ec8e3;font-size:11px}")
+    _H(".up{color:#4caf50;font-weight:bold}.dn{color:#f44336;font-weight:bold}.ru{color:#80e27e;font-size:10px;font-weight:normal}.rd{color:#ff7961;font-size:10px;font-weight:normal}")
+    _H(".pl{color:#888;font-style:italic}")
+    _H("</style></head><body>")
+    _H("<table><thead><tr>")
+    _H("<th class='pos'>#</th><th>NICK</th><th class='rk'>RANK</th><th>MMR</th><th>CHANGE</th><th>MATCH SCORE</th><th>PRESENCE</th>")
+    _H("</tr></thead><tbody>")
+
+    for (new i = 0; i < iQualNum; i++)
     {
-        _H("<!DOCTYPE html><html><head><meta charset='utf-8'><style>")
-        _H("*{box-sizing:border-box;margin:0;padding:0}")
-        _H("body{background:#0d0d0d;color:#ccc;font-family:Arial,sans-serif;font-size:13px}")
-        _H("table{width:100%;border-collapse:collapse}")
-        _H("th{background:#181818;color:#f4a800;padding:5px 8px;text-align:left;font-size:11px;border-bottom:1px solid #333}")
-        _H("td{padding:5px 8px;border-bottom:1px solid #181818}")
-        _H("tr:hover td{background:#141414}")
-        _H(".pos{width:28px;text-align:center;font-weight:bold}")
-        _H(".g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}")
-        _H(".MMR{color:#f4a800;font-weight:bold}.rk{color:#7ec8e3;font-size:11px}")
-        _H(".up{color:#4caf50;font-weight:bold}.dn{color:#f44336;font-weight:bold}.ru{color:#80e27e;font-size:10px;font-weight:normal}.rd{color:#ff7961;font-size:10px;font-weight:normal}")
-        _H(".pl{color:#888;font-style:italic}")
-        _H("</style></head><body>")
-        _H("<table><thead><tr>")
-        _H("<th class='pos'>#</th><th>NICK</th><th class='rk'>RANK</th><th>MMR</th><th>CHANGE</th><th>MATCH SCORE</th><th>PRESENCE</th>")
-        _H("</tr></thead><tbody>")
+        new id       = iQualPlayers[i]
+        new iOld     = g_iPoints[id]
+        new iNew     = iNewPoints[id]
+        new iNewRank = GetPlayerRank(iNew)
+        new iDiff    = iNew - iOld
+        new bool:bPlacement = (g_iMapsPlayed[id] < PLACEMENT_MAPS-1)
 
-        for (new i = 0; i < iQualNum; i++)
+        g_iPoints[id] = iNew
+        g_iMapsPlayed[id]++
+
+        new szName[16]
+        if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
+        else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
+        else copy(szName, charsmax(szName), g_szSteamID[id])
+
+        new szPosCell[48]
+        switch (iOutcome[id])
         {
-            new id       = iQualPlayers[i]
-            new iOld     = g_iPoints[id]
-            new iNew     = iNewPoints[id]
-            new iNewRank = GetPlayerRank(iNew)
-            new iDiff    = iNew - iOld
-            new bool:bPlacement = (g_iMapsPlayed[id] < PLACEMENT_MAPS-1)
-
-            g_iPoints[id] = iNew
-            g_iMapsPlayed[id]++
-
-            new szName[16]
-            if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
-            else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
-            else copy(szName, charsmax(szName), g_szSteamID[id])
-
-            new szPosCell[48]
-            switch (iOutcome[id])
-            {
-                case 1:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos g'>&#9733;</td>")
-                case 2:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos s'>&#9733;</td>")
-                case 3:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos b'>&#9733;</td>")
-                default: formatex(szPosCell, charsmax(szPosCell), "<td class='pos'>%d</td>", iOutcome[id])
-            }
-
-            new iOldRank = GetPlayerRank(iOld)
-            new szDiffCell[96]
-            if (bPlacement)
-            {
-                formatex(szDiffCell, charsmax(szDiffCell), "<td class='pl'>Placement %d/%d</td>", g_iMapsPlayed[id], PLACEMENT_MAPS)
-            }
-            else if (iNewRank > iOldRank)
-            {
-                formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d <span class='ru'>&#8679; +RANK</span></td>", iDiff)
-            }
-            else if (iNewRank < iOldRank)
-            {
-                formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d <span class='rd'>&#8681; -RANK</span></td>", iDiff)
-            }
-            else if (iDiff > 0)
-                formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d</td>", iDiff)
-            else if (iDiff < 0)
-                formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d</td>", iDiff)
-            else
-                formatex(szDiffCell, charsmax(szDiffCell), "<td>--</td>")
-
-            if (bPlacement)
-                formatex(szTmp, charsmax(szTmp),
-                    "<tr>%s<td>%s</td><td class='rk pl'>??</td><td class='pl'>??</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
-                    szPosCell, szName, szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
-            else
-                formatex(szTmp, charsmax(szTmp),
-                    "<tr>%s<td>%s</td><td class='rk'>%s</td><td class='MMR'>%d</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
-                    szPosCell, szName, RankNames[iNewRank], iNew,
-                    szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
-            _H(szTmp)
+            case 1:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos g'>&#9733;</td>")
+            case 2:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos s'>&#9733;</td>")
+            case 3:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos b'>&#9733;</td>")
+            default: formatex(szPosCell, charsmax(szPosCell), "<td class='pos'>%d</td>", iOutcome[id])
         }
 
-        _H("</tbody></table></body></html>")
-    }
-    else
-    {
-        // Barebones plain text — fits within the MOTD inline limit
-        _H("<body bgcolor=#111><font color=#ddd><pre>")
-        _H("#  Name                 Rank      MMR   CHG   SPR   PRS^n")
-
-        for (new i = 0; i < iQualNum; i++)
+        new iOldRank = GetPlayerRank(iOld)
+        new szDiffCell[96]
+        if (bPlacement)
         {
-            new id       = iQualPlayers[i]
-            new iOld     = g_iPoints[id]
-            new iNew     = iNewPoints[id]
-            new iNewRank = GetPlayerRank(iNew)
-            new iDiff    = iNew - iOld
-            new bool:bPlacement = (g_iMapsPlayed[id] < PLACEMENT_MAPS)
-
-            g_iPoints[id] = iNew
-            g_iMapsPlayed[id]++
-
-            new szName[24]
-            if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
-            else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
-            else copy(szName, charsmax(szName), g_szSteamID[id])
-
-            new iOldRank = GetPlayerRank(iOld)
-            new szChg[16]
-            if (bPlacement)
-                formatex(szChg, charsmax(szChg), "%d/%d", g_iMapsPlayed[id], PLACEMENT_MAPS)
-            else if (iNewRank > iOldRank)
-            {
-                if (iDiff > 0) formatex(szChg, charsmax(szChg), "+%d UP", iDiff)
-                else           copy(szChg, charsmax(szChg), "UP")
-            }
-            else if (iNewRank < iOldRank)
-            {
-                if (iDiff < 0) formatex(szChg, charsmax(szChg), "%d DN", iDiff)
-                else           copy(szChg, charsmax(szChg), "DN")
-            }
-            else if (iDiff > 0)
-                formatex(szChg, charsmax(szChg), "+%d", iDiff)
-            else
-                formatex(szChg, charsmax(szChg), "%d", iDiff)
-
-            if (bPlacement)
-                formatex(szTmp, charsmax(szTmp), "%-2d %-22.22s %-9.9s %4s %5s %5.2f %3d%%^n",
-                    iOutcome[id], szName, "??", "??", szChg,
-                    fAvgScore[id], floatround(fParticipation[id] * 100.0))
-            else
-                formatex(szTmp, charsmax(szTmp), "%-2d %-22.22s %-9.9s %4d %5s %5.2f %3d%%^n",
-                    iOutcome[id], szName, RankNamesShort[iNewRank], iNew, szChg,
-                    fAvgScore[id], floatround(fParticipation[id] * 100.0))
-            _H(szTmp)
+            formatex(szDiffCell, charsmax(szDiffCell), "<td class='pl'>Placement %d/%d</td>", g_iMapsPlayed[id], PLACEMENT_MAPS)
         }
-    }
-
-    new szMotd[512]
-    if (bFancy)
-    {
-        copy(g_szResultsHTML, charsmax(g_szResultsHTML), szHTML)
-
-        if (g_bKarLibLoaded)
+        else if (iNewRank > iOldRank)
         {
-            new szServerIP[32]
-            get_cvar_string("net_address", szServerIP, charsmax(szServerIP))
-            new iColon = contain(szServerIP, ":")
-            if (iColon != -1) szServerIP[iColon] = EOS
+            formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d <span class='ru'>&#8679; +RANK</span></td>", iDiff)
+        }
+        else if (iNewRank < iOldRank)
+        {
+            formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d <span class='rd'>&#8681; -RANK</span></td>", iDiff)
+        }
+        else if (iDiff > 0)
+            formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d</td>", iDiff)
+        else if (iDiff < 0)
+            formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d</td>", iDiff)
+        else
+            formatex(szDiffCell, charsmax(szDiffCell), "<td>--</td>")
 
-            new iPort = get_pcvar_num(g_cvarKarPort)
-            formatex(szMotd, charsmax(szMotd),
-                "<style>*{margin:0;padding:0}body,html{height:100%%}iframe{width:100%%;height:100%%;border:none}</style><iframe src='http://%s:%d/csr_results'></iframe>",
-                szServerIP, iPort)
+        if (bPlacement)
+        {
+            formatex(szTmp, charsmax(szTmp),
+                "<tr>%s<td>%s</td><td class='rk pl'>??</td><td class='pl'>??</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
+                szPosCell, szName, szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
         }
         else
         {
-            new szFile[128]
-            get_localinfo("amxx_datadir", szFile, charsmax(szFile))
-            add(szFile, charsmax(szFile), "/csr_results.html")
-            new iFile = fopen(szFile, "wt")
-            if (iFile)
-            {
-                fputs(iFile, szHTML)
-                fclose(iFile)
-            }
-            copy(szMotd, charsmax(szMotd), szFile)
+            formatex(szTmp, charsmax(szTmp),
+                "<tr>%s<td>%s</td><td class='rk'>%s</td><td class='MMR'>%d</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
+                szPosCell, szName, RankNames[iNewRank], iNew,
+                szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
         }
+        _H(szTmp)
     }
-    else
-    {
-        copy(szMotd, charsmax(szMotd), szHTML)
-    }
+    _H("</tbody></table></body></html>")
+
+    copy(g_szResultsHTML, charsmax(g_szResultsHTML), szHTML)
+
+    new szServerIP[32]
+    get_cvar_string("net_address", szServerIP, charsmax(szServerIP))
+    new iAddrColon = contain(szServerIP, ":")
+    if (iAddrColon != -1) szServerIP[iAddrColon] = EOS
+
+    new iPort = get_pcvar_num(g_cvarKarPort)
+    new szMotd[512]
+    formatex(szMotd, charsmax(szMotd),
+        "<style>*{margin:0;padding:0}body,html{height:100%%}iframe{width:100%%;height:100%%;border:none}</style><iframe src='http://%s:%d/csr_results'></iframe>",
+        szServerIP, iPort)
 
     new players[MAX_PLAYERS], iNum
     get_players(players, iNum, "c")
