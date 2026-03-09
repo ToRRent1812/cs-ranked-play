@@ -1,4 +1,4 @@
-
+[🇵🇱](https://github.com/ToRRent1812/cs-ranked-play/blob/main/README-PL.md)
 # CS Ranked Play  
 
 Competitive ranking system plugin for CS 1.6 and Czero  
@@ -23,7 +23,6 @@ __Seasons__ - Each season is an independent leaderboard
 Previous season data is preserved in database. Server admins launch new ranked season using admin command.
 _____________________
 #### SCREENSHOTS
-<img width="972" height="694" alt="Zrzut ekranu_20260308_152434" src="https://github.com/user-attachments/assets/d20953cc-7411-4844-968c-e485bd04f456" />
 <img width="1372" height="1006" alt="Zrzut ekranu_20260308_152535" src="https://github.com/user-attachments/assets/d1e6145d-b19d-4e43-ab4b-883a4b46ad66" />
 <img width="1360" height="1006" alt="Zrzut ekranu_20260308_153349" src="https://github.com/user-attachments/assets/ff5f466d-92d2-4eb2-be20-cfdd255753fe" />
 <img width="590" height="128" alt="Zrzut ekranu_20260308_200938" src="https://github.com/user-attachments/assets/4eec219e-45fd-4b4d-b0d8-1cecfff02cde" />
@@ -41,12 +40,12 @@ _____________________
 +1 Round won  
 -1 Round lost  
 -1 PvP death  
-+2 KD Ratio 2.0+
-+1 KD Ratio > 1.0
--2 KD Ratio < 1.0
-
-SPR Modifiers
-Presence 0-50% -1 | 50-65% -0.5 | 65-80% 0 | 80-90% +0.5 | 90-100% +1
++2 KD Ratio 2.0+  
++1 KD Ratio > 1.0  
+-2 KD Ratio < 1.0  
+  
+SPR Modifiers  
+__Presence__ 0-50% -1 | 50-65% -0.5 | 65-80% 0 | 80-90% +0.5 | 90-100% +1
 
 #### RANK TIERS
 Just like CS:GO, from Silver 1 to Global Elite (at 5000 MMR)
@@ -87,8 +86,8 @@ __amx_rank_newseason__ - Start a new ranked season
 __amx_rank_seasons__ - List all ranked seasons  
 _____________________
 #### PLAYER CHAT COMMANDS
-__!top__ or __/top__ - Open Top leaderboard for current season
-__!top 1__ or __/top 1__ - Open Top10 leaderboard for season 1
+__!top__ or __/top__ - Open Top leaderboard for current season  
+__!top 1__ or __/top 1__ - Open Top10 leaderboard for season 1  
 _____________________
 #### DISCLAIMER
 To add MySQL/MariaDB support, I used Claude AI. You have been warned
