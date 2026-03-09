@@ -43,7 +43,7 @@ _____________________
 -1 PvP death  
 +2 KD Ratio 2.0+
 +1 KD Ratio > 1.0
--1 KD Ratio < 1.0
+-2 KD Ratio < 1.0
 
 SPR Modifiers
 Presence 0-50% -1 | 50-65% -0.5 | 65-80% 0 | 80-90% +0.5 | 90-100% +1
@@ -70,8 +70,7 @@ __rank_min_rounds 5__ - Minimum amount of rounds a player need to play to be eli
 __rank_score_cap 10__ - Maximum score a player can earn in a single round  
 __rank_dmg_cap 550__ - Maximum damage that counts towards player score in a single round  
 __rank_warmup_time 45__ - Unranked warmup time in seconds  
-__rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)  
-__rank_fancy_results 1__ - 1= Use fancy HTML Motd Pages. 0= Use plain text leaderboard(limited)  
+__rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)   
 __rank_karlib_port 8090__ - Open port to use for HTML Motd pages  
 __rank_db_type sqlite__ - Saving type: "sqlite" or "mariadb"  
 __rank_db_host localhost__ - MariaDB database host  
@@ -88,7 +87,8 @@ __amx_rank_newseason__ - Start a new ranked season
 __amx_rank_seasons__ - List all ranked seasons  
 _____________________
 #### PLAYER CHAT COMMANDS
-___!top___ or __/top__ - Open Top Seasonal leaderboard  
+__!top__ or __/top__ - Open Top leaderboard for current season
+__!top 1__ or __/top 1__ - Open Top10 leaderboard for season 1
 _____________________
 #### DISCLAIMER
 To add MySQL/MariaDB support, I used Claude AI. You have been warned
