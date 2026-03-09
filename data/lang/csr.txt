@@ -5,23 +5,13 @@ STATE_LIVE = ^4[CSR] ^3LIVE! LIVE! LIVE!^1 Ranked match is active. GLHF!
 STATE_WAITING = ^4[CSR]^1 Waiting for more human players... (^3%d^1 required)
 STATE_RESUMED = ^4[CSR]^1 Enough players rejoined. Ranked play resumed!
 RANK_NOT_ENOUGH = ^4[CSR]^1 Not enough players (^3%d^1/^3%d^1 needed). Skipping MMR Changes.
-TOP_MOTD_TITLE = Ranked Play - Top Players
-TOP_COL_PLAYER = Nick
-TOP_COL_RANK = Rank
-TOP_COL_MMR = MMR
-TOP_EMPTY = Waiting for more players...
 HUD_PLACEMENT = [CSR] Season %d | Placement %d/%d
 HUD_RANKED = [CSR] Season %d | %s | %d/%d MMR | Top %s
-HUD_WATCH_PLACEMENT = >> Placement %d/%d <<
+HUD_WATCH_PLACEMENT = >> Unranked <<
 HUD_WATCH_RANKED = >> %s <<
 HUD_WARMUP = -== WARMUP ==-
 ADMIN_FORCE_RECALC = ^4[CSR]^1 Admin forced map-end ranking calculation.
 SEASON_STARTED = ^4[CSR]^1 Season ^3%d^1 has begun! (%s) | All player rankings have reset. GLHF!
-RES_MOTD_TITLE = Ranked Match Results
-RES_COL_CHANGE  = Update
-RES_COL_AVG  = Match Score
-RES_COL_PRESENCE = Presence
-RES_PLACEMENT = Placement
 
 [pl]
 STATE_WARMUP_START = ^4[CSR]^1 Rozgrzewka trwa! Mecz rozpocznie się za ^3%d^1 sek.
@@ -30,20 +20,10 @@ STATE_LIVE = ^4[CSR] ^3LIVE! LIVE! LIVE!^1 Mecz rankingowy rozpoczety. GLHF!
 STATE_WAITING = ^4[CSR]^1 Oczekiwanie na wiecej graczy... (Potrzebne ^3%d^1)
 STATE_RESUMED = ^4[CSR]^1 Dołaczyla odpowiednia ilosc osob. mecz rankingowy wznowiony!
 RANK_NOT_ENOUGH = ^4[CSR]^1 Za malo graczy (potrzebne ^3%d^1/^3%d^1). Pomijam MMR.
-TOP_MOTD_TITLE = Ranked - Najlepsi gracze
-TOP_COL_PLAYER = Gracz
-TOP_COL_RANK = Ranga
-TOP_COL_MMR = MMR
-TOP_EMPTY = Czekam na wiecej danych...
 HUD_PLACEMENT = [CSR] Sezon %d | Kalibracja %d/%d
 HUD_RANKED = [CSR] Sezon %d | %s | %d/%d MMR | Top %s
-HUD_WATCH_PLACEMENT = >> Kalibracja %d/%d <<
+HUD_WATCH_PLACEMENT = >> Bez rangi <<
 HUD_WATCH_RANKED = >> %s <<
 HUD_WARMUP = -== ROZGRZEWKA ==-
 ADMIN_FORCE_RECALC = ^4[CSR]^1 Admin wymusil koniec meczu rankingowego.
 SEASON_STARTED = ^4[CSR]^1 Sezon ^3%d^1 rozpoczety! (%s) | MMR graczy został zresetowany. GLHF!
-RES_MOTD_TITLE = Wyniki meczu rankingowego
-RES_COL_CHANGE = Zmiana
-RES_COL_AVG = Wynik meczu
-RES_COL_PRESENCE = Obecnosc
-RES_PLACEMENT  = Kalibracja

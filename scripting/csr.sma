@@ -17,11 +17,12 @@
  *   +1  bad-weapon kill (≥50 dmg to victim)
  *   +1  killstreak kill bonus (up to ACE)
  *   +1  longshot kill
- *   +3  bomb plant
- *   +4  bomb defuse
+ *   +2  bomb plant
+ *   +3  bomb defuse
  *   +1  round win / -1 round loss
  *   -1  PvP death
  *   +1  positive K/D at map end / -1 negative K/D
+ *   Presence SPR bonus/penalty: 0-50% -1 | 50-65% -0.5 | 65-80% 0 | 80-90% +0.5 | 90-100% +1
  */
 
 #include <amxmodx>
@@ -33,7 +34,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "0.9.1"
+#define VERSION    "0.9.3"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -44,7 +45,7 @@
 #define STATE_ENDED     5
 
 #define TASK_WARMUP_TIMER 9901
-#define TASK_HUD_BASE     9710
+#define TASK_HUD_BASE     9903
 #define TASK_MAP_END      9902
 
 #define MAX_PLAYERS     32
@@ -59,8 +60,8 @@
 #define SCORE_KILL_BONUS     1
 #define SCORE_BAD_WEAPON     1
 #define SCORE_LONGSHOT       1
-#define SCORE_PLANT          3
-#define SCORE_DEFUSE         4
+#define SCORE_PLANT          2
+#define SCORE_DEFUSE         3
 #define SCORE_ROUND_WIN      1
 #define SCORE_ROUND_LOST    -1
 #define SCORE_DEATH         -1
@@ -78,14 +79,9 @@
 #define WC_SNIPER  4
 #define WC_KNIFE   5
 #define WC_NADE    6
-#define WC_UNKNOWN 7
 
-#define TEAM_UNASSIGNED      0
-#define TEAM_T               1
-#define TEAM_CT              2
-#define TEAM_SPEC            3
-#define WIN_CTS              1
-#define WIN_TERRORISTS       2
+#define TEAM_CT              1
+#define TEAM_TT              2
 #define HIT_HEAD             1
 
 new const LongshotDist[8] = { 800, 1200, 400, 2500, 3000, 0, 0, 0 }
@@ -148,7 +144,7 @@ new g_iDmgToVictim[MAX_PLAYERS + 1]
 new g_iGlobalPos[MAX_PLAYERS + 1]
 new g_ifriend[MAX_PLAYERS + 1]
 new g_iMatchState = STATE_WAITING
-new g_iTotalRounds = 0
+new g_iTotalRounds
 new g_iTeamRounds[3]
 new g_iCurrentSeason = 1
 new g_cvarDebug
@@ -187,13 +183,13 @@ public plugin_init()
     g_cvarDmgCap = register_cvar("rank_dmg_cap","550",FCVAR_SERVER) // Maximum damage that counts towards player score in a single round
     g_cvarDoubleGain = register_cvar("rank_double_gain","0",FCVAR_SERVER) // 1 = double MMR gain bonus event
     g_cvarWarmupTime = register_cvar("rank_warmup_time","45",FCVAR_SERVER) // Warmup time in seconds
+    g_cvarFancyResults = register_cvar("rank_fancy_results","1",FCVAR_SERVER|FCVAR_PROTECTED) // 1 = full HTML MOTD (requires open port from rank_karlib_port), 0 = plain text MOTD(Limited)
+    g_cvarKarPort = register_cvar("rank_karlib_port","8090",FCVAR_SERVER|FCVAR_PROTECTED) // Port to use MOTD webpages
     g_cvarDBType = register_cvar("rank_db_type","sqlite",FCVAR_SERVER|FCVAR_PROTECTED) // Saving type: "sqlite" or "mariadb"
     g_cvarDBHost = register_cvar("rank_db_host","localhost",FCVAR_SERVER|FCVAR_PROTECTED) // Database host
     g_cvarDBUser = register_cvar("rank_db_user","CSR",FCVAR_SERVER|FCVAR_PROTECTED) // Database user
     g_cvarDBPass = register_cvar("rank_db_pass","",FCVAR_SERVER|FCVAR_PROTECTED) // Database password
     g_cvarDBName = register_cvar("rank_db_name","CSR",FCVAR_SERVER|FCVAR_PROTECTED) // Database name
-    g_cvarFancyResults = register_cvar("rank_fancy_results","1",FCVAR_SERVER|FCVAR_PROTECTED) // 1 = full HTML MOTD (requires open port from rank_karlib_port), 0 = plain text MOTD(Limited)
-    g_cvarKarPort = register_cvar("rank_karlib_port","8090",FCVAR_SERVER|FCVAR_PROTECTED) // Port to use MOTD webpages
 
     RegisterHookChain(RG_CBasePlayer_TakeDamage,"OnTakeDamage",false)
     RegisterHookChain(RG_CBasePlayer_Killed,"OnPlayerKilled",false)
@@ -240,6 +236,7 @@ public plugin_end()
     if (g_bKarLibLoaded) karlib_stop_mini_server()
 }
 
+// KarLib stuff
 public plugin_cfg()
 {
     if (get_pcvar_num(g_cvarFancyResults))
@@ -254,7 +251,6 @@ public plugin_cfg()
     }
 }
 
-// KarLib stuff
 public karlib_mini_server_req(const ip[], const params[], const values[], const path[])
 {
     static szResp[16640]
@@ -269,7 +265,9 @@ public karlib_mini_server_req(const ip[], const params[], const values[], const 
     else if (containi(path, "csr_top") != -1)
     {
         if (g_szTopHTML[0] != EOS)
+        {
             copy(szResp, charsmax(szResp), g_szTopHTML)
+        }
         else
             copy(szResp, charsmax(szResp), "<body bgcolor=#111><font color=#aaa>No top data yet.</font></body>")
     }
@@ -400,9 +398,6 @@ GetGlobalPosition(id)
         return -1
     }
 
-    new szKey[35]
-    copy(szKey, charsmax(szKey), g_szSteamID[id])
-
     new szQuery[192]
     formatex(szQuery, charsmax(szQuery),
         "SELECT COUNT(*)+1 FROM csr_players WHERE maps_played>=%d AND points>%d AND season=%d",
@@ -462,10 +457,10 @@ ResetMapData()
         SetMatchState(STATE_WAITING)
 }
 
-// DATABASE Stuff from claude ai, might be broken, I don't know
+// Claude AI SQL Stuff
 SQL_Init()
 {
-    new szType[16]
+    new szType[10]
     get_pcvar_string(g_cvarDBType, szType, charsmax(szType))
 
     if (equali(szType, "mariadb") || equali(szType, "mysql"))
@@ -498,9 +493,7 @@ SQL_Init()
         log_amx("[CSR] DB connection OK: handle=%d", g_hSQL)
     }
 
-    // Debug: log table creation
-    if (get_pcvar_num(g_cvarDebug))
-        log_amx("[CSR] Creating tables...");
+    if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Creating tables...");
 
     SQL_SimpleQuery(g_hSQL,
         "CREATE TABLE IF NOT EXISTS csr_seasons ( \
@@ -569,13 +562,10 @@ DB_LoadPlayer(id)
 
     get_user_name(id, g_szName[id], charsmax(g_szName[]))
 
-    new szKey[35]
-    copy(szKey, charsmax(szKey), g_szSteamID[id])
-
     new szQuery[256]
     formatex(szQuery, charsmax(szQuery),
         "SELECT points,peak_points,maps_played FROM csr_players WHERE steamid='%s' AND season=%d",
-        szKey, g_iCurrentSeason)
+        g_szSteamID[id], g_iCurrentSeason)
 
     new Handle:hQuery = SQL_PrepareQuery(g_hSQL, "%s", szQuery)
     if (hQuery == Empty_Handle) return
@@ -600,6 +590,26 @@ DB_LoadPlayer(id)
     SQL_FreeHandle(hQuery)
 
     g_iGlobalPos[id] = GetGlobalPosition(id)
+}
+
+DB_UpdateNickname(id)
+{
+    if (g_hSQL == Empty_Handle || g_szSteamID[id][0] == EOS || is_user_bot(id)) return
+
+    new szSafe[129]
+    new j = 0
+    for (new i = 0; g_szName[id][i] != EOS && j < charsmax(szSafe) - 1; i++)
+    {
+        if (g_szName[id][i] == 39) szSafe[j++] = 39
+        szSafe[j++] = g_szName[id][i]
+    }
+    szSafe[j] = EOS
+
+    new szQuery[256]
+    formatex(szQuery, charsmax(szQuery),
+        "UPDATE csr_players SET name='%s' WHERE steamid='%s'",
+        szSafe, g_szSteamID[id])
+    DB_AsyncQuery(szQuery)
 }
 
 DB_QueueSavePlayer(id)
@@ -628,9 +638,6 @@ DB_QueueSavePlayer(id)
     }
     szSafeName[j] = EOS
 
-    new szKey[35]
-    copy(szKey, charsmax(szKey), g_szSteamID[id])
-
     new szQuery[640]
     if (g_bInDB[id])
     {
@@ -638,14 +645,14 @@ DB_QueueSavePlayer(id)
             "UPDATE csr_players SET name='%s',points=%d,peak_points=%d,maps_played=%d \
              WHERE steamid='%s' AND season=%d",
             szSafeName, g_iPoints[id], g_iPeakPoints[id], g_iMapsPlayed[id],
-            szKey, g_iCurrentSeason)
+            g_szSteamID[id], g_iCurrentSeason)
     }
     else
     {
         formatex(szQuery, charsmax(szQuery),
             "INSERT INTO csr_players(steamid,season,name,points,peak_points,maps_played) \
              VALUES('%s',%d,'%s',%d,%d,%d)",
-            szKey, g_iCurrentSeason, szSafeName,
+            g_szSteamID[id], g_iCurrentSeason, szSafeName,
             g_iPoints[id], g_iPeakPoints[id], g_iMapsPlayed[id])
         g_bInDB[id] = true
     }
@@ -670,17 +677,9 @@ DB_SaveAll(iQualPlayers[], iQualNum, bool:bIsParticipant[])
 public client_authorized(id)
 {
     if (is_user_bot(id))
-    {
         get_user_name(id, g_szSteamID[id], charsmax(g_szSteamID[]))
-    }
-    else if (!is_user_bot(id))
-    {
-        get_user_authid(id, g_szSteamID[id], charsmax(g_szSteamID[]))
-    }
     else
-    {
-        g_szSteamID[id][0] = EOS
-    }
+        get_user_authid(id, g_szSteamID[id], charsmax(g_szSteamID[]))
 
     for (new other = 1; other <= MAX_PLAYERS; other++)
     {
@@ -692,6 +691,7 @@ public client_authorized(id)
 
     ResetPlayerMatchData(id)
     DB_LoadPlayer(id)
+    DB_UpdateNickname(id)
     CheckPlayerCount()
 
     set_task(3.0, "Task_InitHUD", id)
@@ -711,48 +711,44 @@ public Task_InitHUD(id)
     if (!is_user_connected(id) || is_user_bot(id)) return
     
     client_cmd(id, "hud_centerid 0")
-    Task_RefreshHUD(id)
+    remove_task(TASK_HUD_BASE + id)
+    set_task(0.2, "Task_RefreshHUD", TASK_HUD_BASE + id)
 }
 
 public Task_RefreshHUD(id)
 {
-    if (!is_user_connected(id) || is_user_bot(id)) return
+    new pid = id - TASK_HUD_BASE
+    if (!is_user_connected(pid) || is_user_bot(pid)) return
 
-    remove_task(TASK_HUD_BASE + id)
+    remove_task(id)
+    set_task(1.5, "Task_RefreshHUD", id)
 
     if (g_iMatchState == STATE_WARMUP)
     {
         new szLine[64]
-        formatex(szLine, charsmax(szLine), "%L", id, "HUD_WARMUP")
+        formatex(szLine, charsmax(szLine), "%L", pid, "HUD_WARMUP")
         set_dhudmessage(255, 255, 0, -1.0, 0.1, 2, 0.6, 1.8, 0.0, 2.0)
-        show_dhudmessage(id, szLine)
+        show_dhudmessage(pid, szLine)
     }
-    else if (!is_user_alive(id))
+    else if (!is_user_alive(pid))
     {
-        new iTarget = get_member(id, m_hObserverTarget)
+        new iTarget = get_member(pid, m_hObserverTarget)
         if (iTarget >= 1 && iTarget <= MAX_PLAYERS && is_user_connected(iTarget) && is_user_alive(iTarget))
         {
             new szLine[128]
             if (g_iMapsPlayed[iTarget] < PLACEMENT_MAPS)
             {
-                formatex(szLine, charsmax(szLine), "%L", id, "HUD_WATCH_PLACEMENT", g_iMapsPlayed[iTarget], PLACEMENT_MAPS)
+                formatex(szLine, charsmax(szLine), "%L", pid, "HUD_WATCH_PLACEMENT")
             }
             else
             {
                 new iRank = GetPlayerRank(g_iPoints[iTarget])
-                new szSPR[16]
-                if (g_iRoundsPresent[iTarget] > 0)
-                    formatex(szSPR, charsmax(szSPR), "%.2f", float(g_iMatchScore[iTarget]) / float(g_iRoundsPresent[iTarget]))
-                        else
-                            copy(szSPR, charsmax(szSPR), "--")
-                            formatex(szLine, charsmax(szLine), "%L", id, "HUD_WATCH_RANKED", RankNames[iRank])
+                formatex(szLine, charsmax(szLine), "%L", pid, "HUD_WATCH_RANKED", RankNames[iRank])
             }
             set_hudmessage(255, 255, 200, -1.0, 0.85, 0, 0.0, 1.8, 0.3, 0.5, 1)
-            show_hudmessage(id, szLine)
+            show_hudmessage(pid, szLine)
         }
     }
-
-    set_task(1.5, "Task_RefreshHUD", TASK_HUD_BASE + id)
 }
 
 public hideStatus(id)
@@ -771,26 +767,23 @@ public showStatus(id)
     new statsHudMessage = get_xvar_num(g_PlayerName)
     new pid = read_data(2)
     new s_targetname[24]
-    new color1 = 0, color2 = 0
     new s_RankName[64]
-    if(g_iMapsPlayed[id] < PLACEMENT_MAPS) copy(s_RankName, charsmax(s_RankName), "")
+    if(g_iMapsPlayed[pid] < PLACEMENT_MAPS) copy(s_RankName, charsmax(s_RankName), "Rank ??")
     else copy(s_RankName, charsmax(s_RankName), RankNamesShort[GetPlayerRank(g_iPoints[pid])])
 
     get_user_name(pid, s_targetname, charsmax(s_targetname))
-    if (get_member(pid, m_iTeam) == 1) color1 = 255
-    else color2 = 255
 
     if(!statsHudMessage)
     {
         if (g_ifriend[id] == 1)
         {
-            set_hudmessage(color1, 50, color2, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
-            ShowSyncHudMsg(id, g_statussync, "-== [%s] %s ==-^n%d HP %d AP", s_RankName, s_targetname, get_user_health(pid), get_user_armor(pid))
+            set_hudmessage(30, 255, 30, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
+            ShowSyncHudMsg(id, g_statussync, "%s^n[-%s-]", s_targetname, s_RankName)
         }
         else
         {
-            set_hudmessage(color1, 50, color2, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
-            ShowSyncHudMsg(id, g_statussync, "-== [%s] %s ==-", s_RankName, s_targetname)
+            set_hudmessage(255, 30, 30, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
+            ShowSyncHudMsg(id, g_statussync, "%s^n[-%s-]", s_targetname, s_RankName)
         }
     }
 }
@@ -870,7 +863,8 @@ ShowTop(id)
     static szTmp[512]
     szHTML[0] = EOS
 
-    _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.t{display:flex;flex-wrap:wrap;gap:2px;padding:3px 6px 0;border-bottom:2px solid #333}.tb{padding:3px 9px;cursor:pointer;border-radius:3px 3px 0 0;background:#181818;color:#888;border:1px solid #2a2a2a;border-bottom:none;font-size:11px}.tb.on{background:#222;color:#f4a800;border-color:#444}.pn{display:none;padding:6px}.pn.on{display:block}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}</style>")
+    _H("<script>var m=location.search.match(/r=(\\d+)/),r=m?+m[1]:0;if(r<3)setTimeout(function(){location.href=location.pathname+'?r='+(r+1)},1500)</script>")
+    _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.t{display:flex;flex-wrap:wrap;gap:2px;padding:3px 6px 0;border-bottom:2px solid #333}.tb{padding:3px 9px;cursor:pointer;border-radius:3px 3px 0 0;background:#181818;color:#888;border:1px solid #2a2a2a;border-bottom:none;font-size:11px}.tb.on{background:#222;color:#f4a800;border-color:#444}.pn{display:none}.pn.on{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}</style>")
 
     _H("<div class='t'>")
     for (new s = 0; s < iNumSeasons; s++)
@@ -888,27 +882,28 @@ ShowTop(id)
         new bool:bCur = (iSeason == g_iCurrentSeason)
         formatex(szTmp, charsmax(szTmp), "<div id='p%d' class='pn%s'>", iSeason, bCur ? " on" : "")
         _H(szTmp)
-        _H("<table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
 
         new szQ[256]
         formatex(szQ, charsmax(szQ),
-            "SELECT name,steamid,points FROM csr_players WHERE maps_played>=%d AND season=%d ORDER BY points DESC LIMIT 15",
+            "SELECT name,steamid,points FROM csr_players WHERE maps_played>=%d AND season=%d ORDER BY points DESC LIMIT 30",
             PLACEMENT_MAPS, iSeason)
 
         new Handle:hTop = SQL_PrepareQuery(g_hSQL, "%s", szQ)
         new bool:bHasRows = false
 
+        _H("<table><thead><tr><th class='p'>#</th><th>Nick</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+
         if (hTop != Empty_Handle && SQL_Execute(hTop))
         {
             new iRow = 1
-            while (SQL_MoreResults(hTop) && iRow <= 15)
+            while (SQL_MoreResults(hTop) && iRow <= 30)
             {
                 new szName[64], szSteam[35], iPoints
                 SQL_ReadResult(hTop, 0, szName,  charsmax(szName))
                 SQL_ReadResult(hTop, 1, szSteam, charsmax(szSteam))
                 iPoints = SQL_ReadResult(hTop, 2)
 
-                new szDisplay[24]
+                new szDisplay[64]
                 copy(szDisplay, charsmax(szDisplay), (szName[0] != EOS) ? szName : szSteam)
 
                 new szPos[32]
@@ -933,7 +928,7 @@ ShowTop(id)
 
         if (!bHasRows)
         {
-            formatex(szTmp, charsmax(szTmp), "<tr><td colspan='4' class='nil'>%L</td></tr>", id, "TOP_EMPTY")
+            formatex(szTmp, charsmax(szTmp), "<tr><td colspan='4' class='nil'>Waiting for data...</td></tr>")
             _H(szTmp)
         }
 
@@ -941,9 +936,6 @@ ShowTop(id)
     }
 
     _H("<script>function show(n){document.querySelectorAll('.pn,.tb').forEach(function(e){e.classList.remove('on')});var p=document.getElementById('p'+n);if(p)p.classList.add('on');document.querySelectorAll('.tb').forEach(function(t){if(t.getAttribute('onclick')==='show('+n+')')t.classList.add('on');});}</script>")
-
-    new szTitle[64]
-    formatex(szTitle, charsmax(szTitle), "%L", id, "TOP_MOTD_TITLE")
 
     // Cache HTML for KarLib to serve
     copy(g_szTopHTML, charsmax(g_szTopHTML), szHTML)
@@ -960,11 +952,10 @@ ShowTop(id)
         formatex(szMotd, charsmax(szMotd),
             "<style>*{margin:0;padding:0}body,html{height:100%%}iframe{width:100%%;height:100%%;border:none}</style><iframe src='http://%s:%d/csr_top'></iframe>",
             szServerIP, iPort)
-        show_motd(id, szMotd, szTitle)
+        show_motd(id, szMotd, "Ranked Play - Top")
     }
     else
     {
-        // KarLib not loaded — fallback: write to file and serve directly
         new szFile[128]
         get_localinfo("amxx_datadir", szFile, charsmax(szFile))
         add(szFile, charsmax(szFile), "/csr_top.html")
@@ -973,7 +964,7 @@ ShowTop(id)
         {
             fputs(iFile, szHTML)
             fclose(iFile)
-            show_motd(id, szFile, szTitle)
+            show_motd(id, szFile, "Ranked Play - Top")
         }
     }
 }
@@ -1011,7 +1002,7 @@ public OnPlayerSpawn(id)
 
     if (g_iMatchState == STATE_WARMUP || g_iMatchState == STATE_WAITING)
     {
-        set_task(1.0, "Task_RefreshHUD", id)
+        set_task(1.0, "Task_RefreshHUD", TASK_HUD_BASE + id)
         return HC_CONTINUE
     }
 
@@ -1031,8 +1022,8 @@ public OnRoundEnd(status, event, Float:tmDelay)
     if (g_iMatchState != STATE_LIVE && g_iMatchState != STATE_CANCELLED)
         return HC_CONTINUE
 
-    if (status == WIN_CTS) g_iTeamRounds[1]++
-    else if (status == WIN_TERRORISTS) g_iTeamRounds[2]++
+    if (status == TEAM_CT) g_iTeamRounds[1]++
+    else if (status == TEAM_TT) g_iTeamRounds[2]++
 
     for (new id = 1; id <= MAX_PLAYERS; id++)
     {
@@ -1220,14 +1211,25 @@ public Task_MapEnd()
     {
         if (!bIsParticipant[id] || g_iRoundsPresent[id] < iMinRounds || g_iRoundsPresent[id] <= 0) continue
 
-        if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual: [%d] %s Rounds=%d Score=%d", id, g_szSteamID[id], g_iRoundsPresent[id], g_iMatchScore[id])
-
         new iInMatch = max(g_iRoundsInMatch[id], g_iRoundsPresent[id])
         if (iInMatch > 0) fParticipation[id] = float(g_iRoundsPresent[id]) / float(iInMatch)
         else fParticipation[id] = float(g_iRoundsPresent[id])
         if (fParticipation[id] > 1.0) fParticipation[id] = 1.0
 
         fAvgScore[id] = float(g_iMatchScore[id]) / float(g_iRoundsPresent[id])
+        if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual: %s Rounds=%d Score=%d RawAvg=%.2f", g_szSteamID[id], g_iRoundsPresent[id], g_iMatchScore[id], fAvgScore[id])
+
+        // Presence bonus/penalty
+        new Float:fPrs = fParticipation[id]
+        new Float:fPresenceBonus
+        if      (fPrs < 0.50) fPresenceBonus = -1.0
+        else if (fPrs < 0.65) fPresenceBonus = -0.5
+        else if (fPrs < 0.80) fPresenceBonus =  0.0
+        else if (fPrs < 0.90) fPresenceBonus =  0.5
+        else                  fPresenceBonus =  1.0
+        fAvgScore[id] += fPresenceBonus
+
+        if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] %s Presence=%.0f%% PresenceBonus=%.1f AdjAvg=%.2f", g_szSteamID[id], fPrs * 100.0, fPresenceBonus, fAvgScore[id])
 
         iQualPlayers[iQualNum++] = id
     }
@@ -1309,8 +1311,16 @@ public Task_MapEnd()
             iChange = (iChange * iShield) / 100
         }
         // Cap MMR gain/lose if math bugged out
-        if(iChange < MMR_MAX_LOSE) iChange = MMR_MAX_LOSE
-        if(iChange > MMR_MAX_GAIN) iChange = MMR_MAX_GAIN
+        if(bPlace)
+        {
+            if(iChange < MMR_MAX_LOSE*2) iChange = MMR_MAX_LOSE*2
+            if(iChange > MMR_MAX_GAIN*2) iChange = MMR_MAX_GAIN*2
+        }
+        else
+        {
+            if(iChange < MMR_MAX_LOSE) iChange = MMR_MAX_LOSE
+            if(iChange > MMR_MAX_GAIN) iChange = MMR_MAX_GAIN
+        }
         iNewPoints[id] = clamp(g_iPoints[id] + iChange, g_iPeakPoints[id] / 2, MMR_CAP)
     }
 
@@ -1333,15 +1343,11 @@ public Task_MapEnd()
         _H(".pos{width:28px;text-align:center;font-weight:bold}")
         _H(".g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}")
         _H(".MMR{color:#f4a800;font-weight:bold}.rk{color:#7ec8e3;font-size:11px}")
-        _H(".up{color:#4caf50;font-weight:bold}.dn{color:#f44336;font-weight:bold}")
+        _H(".up{color:#4caf50;font-weight:bold}.dn{color:#f44336;font-weight:bold}.ru{color:#80e27e;font-size:10px;font-weight:normal}.rd{color:#ff7961;font-size:10px;font-weight:normal}")
         _H(".pl{color:#888;font-style:italic}")
         _H("</style></head><body>")
         _H("<table><thead><tr>")
-        formatex(szTmp, charsmax(szTmp),
-            "<th class='pos'>#</th><th>%L</th><th class='rk'>%L</th><th>%L</th><th>%L</th><th>%L</th><th>%L</th>",
-            LANG_SERVER, "TOP_COL_PLAYER", LANG_SERVER, "TOP_COL_RANK", LANG_SERVER, "TOP_COL_MMR",
-            LANG_SERVER, "RES_COL_CHANGE", LANG_SERVER, "RES_COL_AVG", LANG_SERVER, "RES_COL_PRESENCE")
-        _H(szTmp)
+        _H("<th class='pos'>#</th><th>NICK</th><th class='rk'>RANK</th><th>MMR</th><th>CHANGE</th><th>MATCH SCORE</th><th>PRESENCE</th>")
         _H("</tr></thead><tbody>")
 
         for (new i = 0; i < iQualNum; i++)
@@ -1358,6 +1364,7 @@ public Task_MapEnd()
 
             new szName[16]
             if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
+            else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
             else copy(szName, charsmax(szName), g_szSteamID[id])
 
             new szPosCell[48]
@@ -1369,10 +1376,20 @@ public Task_MapEnd()
                 default: formatex(szPosCell, charsmax(szPosCell), "<td class='pos'>%d</td>", iOutcome[id])
             }
 
-            new szDiffCell[64]
+            new iOldRank = GetPlayerRank(iOld)
+            new szDiffCell[96]
             if (bPlacement)
-                formatex(szDiffCell, charsmax(szDiffCell), "<td class='pl'>%L %d/%d</td>",
-                    LANG_SERVER, "RES_PLACEMENT", g_iMapsPlayed[id], PLACEMENT_MAPS)
+            {
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='pl'>Placement %d/%d</td>", g_iMapsPlayed[id], PLACEMENT_MAPS)
+            }
+            else if (iNewRank > iOldRank)
+            {
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d <span class='ru'>&#8679; +RANK</span></td>", iDiff)
+            }
+            else if (iNewRank < iOldRank)
+            {
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d <span class='rd'>&#8681; -RANK</span></td>", iDiff)
+            }
             else if (iDiff > 0)
                 formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d</td>", iDiff)
             else if (iDiff < 0)
@@ -1414,12 +1431,27 @@ public Task_MapEnd()
 
             new szName[24]
             if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
+            else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
             else copy(szName, charsmax(szName), g_szSteamID[id])
 
-            new szChg[8]
-            if (bPlacement)     formatex(szChg, charsmax(szChg), "%d/%d", g_iMapsPlayed[id], PLACEMENT_MAPS)
-            else if (iDiff > 0) formatex(szChg, charsmax(szChg), "+%d", iDiff)
-            else                formatex(szChg, charsmax(szChg), "%d", iDiff)
+            new iOldRank = GetPlayerRank(iOld)
+            new szChg[16]
+            if (bPlacement)
+                formatex(szChg, charsmax(szChg), "%d/%d", g_iMapsPlayed[id], PLACEMENT_MAPS)
+            else if (iNewRank > iOldRank)
+            {
+                if (iDiff > 0) formatex(szChg, charsmax(szChg), "+%d UP", iDiff)
+                else           copy(szChg, charsmax(szChg), "UP")
+            }
+            else if (iNewRank < iOldRank)
+            {
+                if (iDiff < 0) formatex(szChg, charsmax(szChg), "%d DN", iDiff)
+                else           copy(szChg, charsmax(szChg), "DN")
+            }
+            else if (iDiff > 0)
+                formatex(szChg, charsmax(szChg), "+%d", iDiff)
+            else
+                formatex(szChg, charsmax(szChg), "%d", iDiff)
 
             if (bPlacement)
                 formatex(szTmp, charsmax(szTmp), "%-2d %-22.22s %-9.9s %4s %5s %5.2f %3d%%^n",
@@ -1433,13 +1465,9 @@ public Task_MapEnd()
         }
     }
 
-    new szTitle[64]
-    formatex(szTitle, charsmax(szTitle), "%L", LANG_SERVER, "RES_MOTD_TITLE")
-
     new szMotd[512]
     if (bFancy)
     {
-        // Cache HTML so KarLib can serve it on demand
         copy(g_szResultsHTML, charsmax(g_szResultsHTML), szHTML)
 
         if (g_bKarLibLoaded)
@@ -1482,7 +1510,7 @@ public Task_MapEnd()
         message_begin(MSG_ONE, SVC_FINALE, _, viewer)
         write_string("")
         message_end()
-        show_motd(viewer, szMotd, szTitle)
+        show_motd(viewer, szMotd, "Ranked Match Results")
     }
 
     DB_SaveAll(iQualPlayers, iQualNum, bIsParticipant)
