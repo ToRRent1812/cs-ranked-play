@@ -34,7 +34,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "0.9.5"
+#define VERSION    "1.0.0"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -66,7 +66,7 @@
 #define SCORE_ROUND_LOST    -1
 #define SCORE_DEATH         -1
 #define SCORE_POSITIVE_KD    1
-#define SCORE_NEGATIVE_KD   -2
+#define SCORE_NEGATIVE_KD   -1
 #define BAD_WEAPON_MIN_DMG  50
 #define MAX_KILLSTREAK       5
 
@@ -168,6 +168,7 @@ new g_statussync
 new g_PlayerName
 new Handle:g_hSQLTuple
 new Handle:g_hSQL
+new bool:g_bDBInitAttempted = false
 
 public plugin_init()
 {
@@ -183,8 +184,8 @@ public plugin_init()
     g_cvarDoubleGain = register_cvar("rank_double_gain","0",FCVAR_SERVER) // 1 = double MMR gain bonus event
     g_cvarWarmupTime = register_cvar("rank_warmup_time","45",FCVAR_SERVER) // Warmup time in seconds
     g_cvarKarPort = register_cvar("rank_karlib_port","8090",FCVAR_SERVER|FCVAR_PROTECTED) // Port to use MOTD webpages
-    g_cvarDBType = register_cvar("rank_db_type","sqlite",FCVAR_SERVER|FCVAR_PROTECTED) // Saving type: "sqlite" or "mariadb"
-    g_cvarDBHost = register_cvar("rank_db_host","localhost",FCVAR_SERVER|FCVAR_PROTECTED) // Database host
+    g_cvarDBType = register_cvar("rank_db_type","sqlite",FCVAR_SERVER) // Saving type: "sqlite" or "mariadb"
+    g_cvarDBHost = register_cvar("rank_db_host","127.0.0.1",FCVAR_SERVER|FCVAR_PROTECTED) // Database host
     g_cvarDBUser = register_cvar("rank_db_user","CSR",FCVAR_SERVER|FCVAR_PROTECTED) // Database user
     g_cvarDBPass = register_cvar("rank_db_pass","",FCVAR_SERVER|FCVAR_PROTECTED) // Database password
     g_cvarDBName = register_cvar("rank_db_name","CSR",FCVAR_SERVER|FCVAR_PROTECTED) // Database name
@@ -214,7 +215,6 @@ public plugin_init()
     register_event("StatusValue", "showStatus", "bef", "1=2", "2!0")
     register_event("StatusValue", "hideStatus", "bef", "1=1", "2=0")
 
-    SQL_Init()
     SetMatchState(STATE_WAITING)
     set_task(2.0, "Task_CheckPlayerCount")
     g_statussync = CreateHudSyncObj()
@@ -237,6 +237,8 @@ public plugin_end()
 // KarLib stuff
 public plugin_cfg()
 {
+    set_task(3.0, "Task_SQL_Init")
+
     if (!g_bKarLibLoaded)
     {
         new iPort = get_pcvar_num(g_cvarKarPort)
@@ -248,7 +250,7 @@ public plugin_cfg()
         }
         else
         {
-            log_amx("[CSR] ERROR: rank_karlib_port is not set.")
+            log_amx("[CSR] ERROR: rank_karlib_port is not set. KarLib is required.")
         }
     }
 
@@ -268,17 +270,14 @@ public karlib_mini_server_req(const ip[], const params[], const values[], const 
     }
     else if (containi(path, "csr_top") != -1)
     {
-        // Check for ?season=N — if present and not current, serve that season
         new iReqSeason = 0
         new iSemicolon = contain(params, "season")
         if (iSemicolon != -1)
         {
-            // params and values are semicolon-delimited; count semicolons before match to find index
             new iIdx = 0
             for (new i = 0; i < iSemicolon; i++)
                 if (params[i] == ';') iIdx++
 
-            // Extract iIdx-th token from values
             new szVal[12]
             new iCur = 0, iStart = 0
             for (new j = 0; values[j] != EOS; j++)
@@ -488,8 +487,16 @@ ResetMapData()
 }
 
 // Claude AI SQL Stuff
+public Task_SQL_Init()
+{
+    SQL_Init()
+}
+
 SQL_Init()
 {
+    if (g_bDBInitAttempted) return  // only attempt once per server session
+    g_bDBInitAttempted = true
+
     new szType[10]
     get_pcvar_string(g_cvarDBType, szType, charsmax(szType))
 
@@ -541,6 +548,9 @@ SQL_Init()
             peak_points INT         NOT NULL DEFAULT 250, \
             maps_played INT         NOT NULL DEFAULT 0, \
             PRIMARY KEY (steamid, season))")
+
+    SQL_SimpleQuery(g_hSQL,
+        "CREATE INDEX IF NOT EXISTS idx_players_season_points ON csr_players (season, points DESC)")
 
     DB_LoadCurrentSeason()
     log_amx("[CSR] Database ready (season %d).", g_iCurrentSeason)
@@ -1064,6 +1074,7 @@ ShowTopMOTD(id, iReqSeason)
 {
     new szTitle[64]
 
+    // Past season: verify it exists in DB, then serve via KarLib iframe (?season=N)
     if (iReqSeason > 0 && iReqSeason != g_iCurrentSeason)
     {
         new szChkQ[96]
@@ -1097,6 +1108,7 @@ ShowTopMOTD(id, iReqSeason)
         return
     }
 
+    // Current season: serve live cached HTML via KarLib
     if (g_szTopHTML[0] == EOS) BuildTopHTML()
     if (g_szTopHTML[0] == EOS) return
 
@@ -1114,7 +1126,6 @@ ShowTopMOTD(id, iReqSeason)
         szServerIP, iPort)
     show_motd(id, szMotd, szTitle)
 }
-
 // ROUND EVENTS
 public OnNewRound()
 {
@@ -1325,7 +1336,7 @@ public Task_MapEnd()
         return
     }
 
-    // K/D bonus at map end
+    // K/D bonus
     for (new id = 1; id <= MAX_PLAYERS; id++)
     {
         if (!g_bParticipated[id]) continue
@@ -1337,7 +1348,6 @@ public Task_MapEnd()
             g_iMatchScore[id] += SCORE_NEGATIVE_KD
     }
 
-    // Build participant and qualifier lists
     new bool:bIsParticipant[MAX_PLAYERS + 1]
     for (new id = 1; id <= MAX_PLAYERS; id++)
     {
@@ -1391,7 +1401,7 @@ public Task_MapEnd()
         return
     }
 
-    // Sort qualifiers by avg score descending
+    // Sort qualifiers
     for (new i = 1; i < iQualNum; i++)
     {
         new key = iQualPlayers[i]
@@ -1424,7 +1434,7 @@ public Task_MapEnd()
         new bool:bPlace = (g_iMapsPlayed[id] < PLACEMENT_MAPS)
 
         new Float:fTotal = 0.0
-        // 1v1 battles between players to determine MMR gain/lose
+        // 1v1
         for (new j = 0; j < iQualNum; j++)
         {
             new opp = iQualPlayers[j]
@@ -1456,7 +1466,6 @@ public Task_MapEnd()
             new iShield = (iMyRank < RANK_COUNT) ? ShieldLossPct[iMyRank] : 100
             iChange = (iChange * iShield) / 100
         }
-        // Cap MMR gain/lose if math bugged out
         if(bPlace)
         {
             if(iChange < MMR_MAX_LOSE*2) iChange = MMR_MAX_LOSE*2
@@ -1493,68 +1502,65 @@ public Task_MapEnd()
     _H("<th class='pos'>#</th><th>NICK</th><th class='rk'>RANK</th><th>MMR</th><th>CHANGE</th><th>MATCH SCORE</th><th>PRESENCE</th>")
     _H("</tr></thead><tbody>")
 
-    for (new i = 0; i < iQualNum; i++)
-    {
-        new id       = iQualPlayers[i]
-        new iOld     = g_iPoints[id]
-        new iNew     = iNewPoints[id]
-        new iNewRank = GetPlayerRank(iNew)
-        new iDiff    = iNew - iOld
-        new bool:bPlacement = (g_iMapsPlayed[id] < PLACEMENT_MAPS-1)
+        for (new i = 0; i < iQualNum; i++)
+        {
+            new id       = iQualPlayers[i]
+            new iOld     = g_iPoints[id]
+            new iNew     = iNewPoints[id]
+            new iNewRank = GetPlayerRank(iNew)
+            new iDiff    = iNew - iOld
+            new bool:bPlacement = (g_iMapsPlayed[id] < PLACEMENT_MAPS-1)
 
-        g_iPoints[id] = iNew
-        g_iMapsPlayed[id]++
+            g_iPoints[id] = iNew
+            g_iMapsPlayed[id]++
 
-        new szName[16]
-        if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
-        else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
-        else copy(szName, charsmax(szName), g_szSteamID[id])
+            new szName[16]
+            if (is_user_connected(id)) get_user_name(id, szName, charsmax(szName))
+            else if (g_szName[id][0] != EOS) copy(szName, charsmax(szName), g_szName[id])
+            else copy(szName, charsmax(szName), g_szSteamID[id])
 
-        new szPosCell[48]
-        switch (iOutcome[id])
-        {
-            case 1:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos g'>&#9733;</td>")
-            case 2:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos s'>&#9733;</td>")
-            case 3:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos b'>&#9733;</td>")
-            default: formatex(szPosCell, charsmax(szPosCell), "<td class='pos'>%d</td>", iOutcome[id])
+            new szPosCell[48]
+            switch (iOutcome[id])
+            {
+                case 1:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos g'>&#9733;</td>")
+                case 2:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos s'>&#9733;</td>")
+                case 3:  formatex(szPosCell, charsmax(szPosCell), "<td class='pos b'>&#9733;</td>")
+                default: formatex(szPosCell, charsmax(szPosCell), "<td class='pos'>%d</td>", iOutcome[id])
+            }
+
+            new iOldRank = GetPlayerRank(iOld)
+            new szDiffCell[96]
+            if (bPlacement)
+            {
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='pl'>Placement %d/%d</td>", g_iMapsPlayed[id], PLACEMENT_MAPS)
+            }
+            else if (iNewRank > iOldRank)
+            {
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d <span class='ru'>&#8679; +RANK</span></td>", iDiff)
+            }
+            else if (iNewRank < iOldRank)
+            {
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d <span class='rd'>&#8681; -RANK</span></td>", iDiff)
+            }
+            else if (iDiff > 0)
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d</td>", iDiff)
+            else if (iDiff < 0)
+                formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d</td>", iDiff)
+            else
+                formatex(szDiffCell, charsmax(szDiffCell), "<td>--</td>")
+
+            if (bPlacement)
+                formatex(szTmp, charsmax(szTmp),
+                    "<tr>%s<td>%s</td><td class='rk pl'>??</td><td class='pl'>??</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
+                    szPosCell, szName, szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
+            else
+                formatex(szTmp, charsmax(szTmp),
+                    "<tr>%s<td>%s</td><td class='rk'>%s</td><td class='MMR'>%d</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
+                    szPosCell, szName, RankNames[iNewRank], iNew,
+                    szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
+            _H(szTmp)
         }
 
-        new iOldRank = GetPlayerRank(iOld)
-        new szDiffCell[96]
-        if (bPlacement)
-        {
-            formatex(szDiffCell, charsmax(szDiffCell), "<td class='pl'>Placement %d/%d</td>", g_iMapsPlayed[id], PLACEMENT_MAPS)
-        }
-        else if (iNewRank > iOldRank)
-        {
-            formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d <span class='ru'>&#8679; +RANK</span></td>", iDiff)
-        }
-        else if (iNewRank < iOldRank)
-        {
-            formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d <span class='rd'>&#8681; -RANK</span></td>", iDiff)
-        }
-        else if (iDiff > 0)
-            formatex(szDiffCell, charsmax(szDiffCell), "<td class='up'>+%d</td>", iDiff)
-        else if (iDiff < 0)
-            formatex(szDiffCell, charsmax(szDiffCell), "<td class='dn'>%d</td>", iDiff)
-        else
-            formatex(szDiffCell, charsmax(szDiffCell), "<td>--</td>")
-
-        if (bPlacement)
-        {
-            formatex(szTmp, charsmax(szTmp),
-                "<tr>%s<td>%s</td><td class='rk pl'>??</td><td class='pl'>??</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
-                szPosCell, szName, szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
-        }
-        else
-        {
-            formatex(szTmp, charsmax(szTmp),
-                "<tr>%s<td>%s</td><td class='rk'>%s</td><td class='MMR'>%d</td>%s<td>%.2f</td><td>%.0f%%</td></tr>",
-                szPosCell, szName, RankNames[iNewRank], iNew,
-                szDiffCell, fAvgScore[id], fParticipation[id] * 100.0)
-        }
-        _H(szTmp)
-    }
     _H("</tbody></table></body></html>")
 
     copy(g_szResultsHTML, charsmax(g_szResultsHTML), szHTML)
