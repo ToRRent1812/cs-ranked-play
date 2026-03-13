@@ -10,7 +10,7 @@
 native csr_get_points(playerid)
 
 // Get the current rank name of a player.
-native csr_get_rank_name(playerid, rankname[], maxlen)
+native csr_get_rank_name(playerid, maxlength)
 
 // Check if a player is in the placement phase.
 native csr_is_placement(playerid)

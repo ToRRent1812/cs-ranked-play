@@ -34,7 +34,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.0.0"
+#define VERSION    "1.0.1"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -80,8 +80,6 @@
 #define WC_KNIFE   5
 #define WC_NADE    6
 
-#define TEAM_CT              1
-#define TEAM_TT              2
 #define HIT_HEAD             1
 
 new const LongshotDist[8] = { 800, 1200, 400, 2500, 3000, 0, 0, 0 }
@@ -1179,8 +1177,8 @@ public OnRoundEnd(status, event, Float:tmDelay)
     if (g_iMatchState != STATE_LIVE && g_iMatchState != STATE_CANCELLED)
         return HC_CONTINUE
 
-    if (status == TEAM_CT) g_iTeamRounds[1]++
-    else if (status == TEAM_TT) g_iTeamRounds[2]++
+    if (status == 1) g_iTeamRounds[1]++
+    else if (status == 2) g_iTeamRounds[2]++
 
     for (new id = 1; id <= MAX_PLAYERS; id++)
     {
@@ -1424,6 +1422,10 @@ public Task_MapEnd()
             iPos = i + 1
         iOutcome[id] = iPos
     }
+
+    // Refresh player MMR from DB before calculation
+    for (new i = 0; i < iQualNum; i++)
+        DB_LoadPlayer(iQualPlayers[i])
 
     // Calculate new MMR for each qualifier
     new iNewPoints[MAX_PLAYERS + 1]
@@ -1776,9 +1778,9 @@ public _native_get_rank_name(plugin, params)
 {
     new id = get_param(1)
     if (g_iMapsPlayed[id] < PLACEMENT_MAPS)
-        set_string(2, "Unranked", get_param(3))
+        set_string(2, "Unranked", get_param(2))
     else
-        set_string(2, RankNames[GetPlayerRank(g_iPoints[id])], get_param(3))
+        set_string(2, RankNames[GetPlayerRank(g_iPoints[id])], get_param(2))
     return 1
 }
 
