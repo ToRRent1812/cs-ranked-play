@@ -20,6 +20,7 @@ __Anti-smurf__ - Player cannot drop down below 1/2 of their highest MMR in the c
 __Shield__ - Player loses less MMR on lower ranks, less frustrating for casual players  
 __Placement games__ - player receives first rank after 5 placement matches  
 __Seasons__ - Each season is an independent leaderboard  
+__Ragequit protection__ - If player disconnects, his data will be saved until map change or reconnect  
 Previous season data is preserved in database. Server admins launch new ranked season using admin command.
 _____________________
 #### SCREENSHOTS
@@ -30,7 +31,7 @@ _____________________
 _____________________
 #### HIDDEN SCORING SYSTEM
 
-+1 60 enemy damage dealt (capped at rank_dmg_cap per round to avoid exploits)   
++1 40 enemy damage dealt (capped at rank_dmg_cap per round to avoid exploits)   
 +1 Headshot / knife / grenade / pistol kill   
 +1 Bad-weapon kill (>=50 dmg to victim)  
 +1 Killstreak kills in one round (until ACE)  
@@ -40,6 +41,7 @@ _____________________
 +1 Round won  
 -1 Round lost  
 -1 PvP death  
+-2 Teamkill  
 +2 KD Ratio 2.0+  
 +1 KD Ratio > 1.0  
 -2 KD Ratio < 1.0  
@@ -67,6 +69,7 @@ __rank_min_players 4__ - Minimum amount of human players to start ranked match
 __rank_ideal_players 10__ - Ideal amount of players (human+bots) for max MMR gain/loss  
 __rank_min_rounds 5__ - Minimum amount of rounds a player need to play to be eligible for MMR change  
 __rank_score_cap 10__ - Maximum score a player can earn in a single round  
+__rank_match_win_bonus 0__ - Give team that won a match extra map score(useful for pro/scrims/pugs)
 __rank_dmg_cap 550__ - Maximum damage that counts towards player score in a single round  
 __rank_warmup_time 45__ - Unranked warmup time in seconds  
 __rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)   
