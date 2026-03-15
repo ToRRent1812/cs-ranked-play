@@ -34,7 +34,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.0.1"
+#define VERSION    "1.0.3"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -56,7 +56,7 @@
 #define MMR_MAX_GAIN    125
 #define MMR_MAX_LOSE    -125
 
-#define SCORE_DMG_PER_POINT 60
+#define SCORE_DMG_PER_POINT 40
 #define SCORE_KILL_BONUS     1
 #define SCORE_BAD_WEAPON     1
 #define SCORE_LONGSHOT       1
@@ -65,6 +65,7 @@
 #define SCORE_ROUND_WIN      1
 #define SCORE_ROUND_LOST    -1
 #define SCORE_DEATH         -1
+#define SCORE_TEAMKILL      -2
 #define SCORE_POSITIVE_KD    1
 #define SCORE_NEGATIVE_KD   -1
 #define BAD_WEAPON_MIN_DMG  50
@@ -80,7 +81,7 @@
 #define WC_KNIFE   5
 #define WC_NADE    6
 
-#define HIT_HEAD             1
+#define HIT_HEAD   1
 
 new const LongshotDist[8] = { 800, 1200, 400, 2500, 3000, 0, 0, 0 }
 
@@ -163,10 +164,11 @@ new g_szResultsHTML[16384]
 new g_szTopHTML[16384]
 new bool:g_bKarLibLoaded = false
 new g_statussync
+new g_iMsgSayText
 new g_PlayerName
 new Handle:g_hSQLTuple
 new Handle:g_hSQL
-new bool:g_bDBInitAttempted = false
+new bool:g_forcedwin = false
 
 public plugin_init()
 {
@@ -216,6 +218,7 @@ public plugin_init()
     SetMatchState(STATE_WAITING)
     set_task(2.0, "Task_CheckPlayerCount")
     g_statussync = CreateHudSyncObj()
+    g_iMsgSayText = get_user_msgid("SayText")
     g_PlayerName = get_xvar_id("PlayerName")
     server_cmd("mp_chattime 20") // Making sure ranked play can show the end results
 }
@@ -232,11 +235,15 @@ public plugin_end()
     if (g_bKarLibLoaded) karlib_stop_mini_server()
 }
 
-// KarLib stuff
+
 public plugin_cfg()
 {
+    remove_task(TASK_MAP_END)
+    SetMatchState(STATE_WAITING)
+    g_forcedwin = false
     set_task(3.0, "Task_SQL_Init")
 
+    // KarLib stuff
     if (!g_bKarLibLoaded)
     {
         new iPort = get_pcvar_num(g_cvarKarPort)
@@ -252,7 +259,7 @@ public plugin_cfg()
         }
     }
 
-    set_task(5.0, "Task_BuildTopHTML")
+    set_task(6.0, "Task_BuildTopHTML")
 }
 
 public karlib_mini_server_req(const ip[], const params[], const values[], const path[])
@@ -313,6 +320,8 @@ public plugin_natives()
     register_native("csr_get_rank_name","_native_get_rank_name")
     register_native("csr_is_placement","_native_is_placement")
     register_native("csr_get_state","_native_get_state")
+    register_native("csr_custom_win","_native_custom_win")
+    register_native("csr_add_score","_native_add_score")
 }
 
 SetMatchState(iNew)
@@ -325,6 +334,7 @@ SetMatchState(iNew)
     {
         case STATE_WAITING:
         {
+            ResetMapData();
             remove_task(TASK_WARMUP_TIMER)
             client_print_color(0, print_team_default, "%L", LANG_PLAYER, "STATE_WAITING", get_pcvar_num(g_cvarMinPlayers))
             if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Entered STATE_WAITING");
@@ -334,6 +344,8 @@ SetMatchState(iNew)
             remove_task(TASK_WARMUP_TIMER)
             set_cvar_num("mp_forcerespawn", 2)
             set_task(float(get_pcvar_num(g_cvarWarmupTime)), "Task_WarmupExpired", TASK_WARMUP_TIMER)
+            client_print_color(0, print_team_default, "%L", LANG_PLAYER, "RANK_WELCOME_1")
+            client_print_color(0, print_team_default, "%L", LANG_PLAYER, "RANK_WELCOME_2")
             client_print_color(0, print_team_default, "%L", LANG_PLAYER, "STATE_WARMUP_START", get_pcvar_num(g_cvarWarmupTime))
             if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Entered STATE_WARMUP");
         }
@@ -341,8 +353,8 @@ SetMatchState(iNew)
         {
             client_print_color(0, print_team_default, "%L", LANG_PLAYER, "STATE_RESTARTING")
             set_cvar_num("mp_forcerespawn", 0)
-            server_cmd("sv_restart 2")
-            if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Entered STATE_STARTING");
+            server_cmd("sv_restart 3")
+            if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Entered STATE_STARTING, refreshing DB data");
         }
         case STATE_LIVE:
         {
@@ -404,7 +416,7 @@ CheckPlayerCount()
 CountHumanPlayers()
 {
     new players[MAX_PLAYERS], iNum
-    get_players(players, iNum, "c")  // "c" = connected, human
+    get_players(players, iNum, "c")
     return iNum
 }
 
@@ -480,8 +492,6 @@ ResetMapData()
     g_iTeamRounds[2] = 0
     for (new id = 1; id <= MAX_PLAYERS; id++)
         ResetPlayerMatchData(id)
-    if (g_iMatchState == STATE_ENDED)
-        SetMatchState(STATE_WAITING)
 }
 
 // Claude AI SQL Stuff
@@ -492,8 +502,8 @@ public Task_SQL_Init()
 
 SQL_Init()
 {
-    if (g_bDBInitAttempted) return  // only attempt once per server session
-    g_bDBInitAttempted = true
+    if (g_hSQL != Empty_Handle)
+        return
 
     new szType[10]
     get_pcvar_string(g_cvarDBType, szType, charsmax(szType))
@@ -596,7 +606,11 @@ DB_AsyncQuery(const szQuery[])
 
 DB_LoadPlayer(id)
 {
-    if (g_hSQL == Empty_Handle) return
+    if (g_hSQL == Empty_Handle)
+    {
+        SQL_Init()
+        if (g_hSQL == Empty_Handle) return
+    }
 
     get_user_name(id, g_szName[id], charsmax(g_szName[]))
 
@@ -652,7 +666,11 @@ DB_UpdateNickname(id)
 
 DB_QueueSavePlayer(id)
 {
-    if (g_hSQL == Empty_Handle) return
+    if (g_hSQL == Empty_Handle)
+    {
+        SQL_Init()
+        if (g_hSQL == Empty_Handle) return
+    }
 
     if (g_iPoints[id] > g_iPeakPoints[id])
         g_iPeakPoints[id] = g_iPoints[id]
@@ -750,6 +768,7 @@ public Task_InitHUD(id)
     
     client_cmd(id, "hud_centerid 0")
     remove_task(TASK_HUD_BASE + id)
+
     set_task(0.2, "Task_RefreshHUD", TASK_HUD_BASE + id)
 }
 
@@ -815,19 +834,19 @@ public showStatus(id)
         if (g_ifriend[id] == 1)
         {
             set_hudmessage(30, 255, 30, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
-            ShowSyncHudMsg(id, g_statussync, "%s^n[-%s-]", s_targetname, s_RankName)
+            ShowSyncHudMsg(id, g_statussync, "%s^n[- %s -]", s_targetname, s_RankName)
         }
         else
         {
             set_hudmessage(255, 30, 30, -1.0, 0.56, 1, 0.01, 3.0, 0.01, 0.01, -1)
-            ShowSyncHudMsg(id, g_statussync, "%s^n[-%s-]", s_targetname, s_RankName)
+            ShowSyncHudMsg(id, g_statussync, "%s^n[- %s -]", s_targetname, s_RankName)
         }
     }
 }
 
 public HUD_ShowSelf(id)
 {
-    if (!is_user_connected(id) || is_user_bot(id) || !is_user_alive(id)) return
+    if (!is_user_connected(id) || is_user_bot(id) || !is_user_alive(id) || g_iMatchState != STATE_LIVE) return
     new szLine[128]
 
     if (g_iMapsPlayed[id] < PLACEMENT_MAPS)
@@ -877,12 +896,108 @@ public CmdSay(id, level, cid)
         ShowTopMOTD(id, iReqSeason)
         return PLUGIN_HANDLED
     }
-    return PLUGIN_CONTINUE
+
+    if (szText[start] == EOS) return PLUGIN_CONTINUE
+
+    new szPrefix[32]
+    if (g_iMapsPlayed[id] < PLACEMENT_MAPS || g_hSQL == Empty_Handle)
+        copy(szPrefix, charsmax(szPrefix), "??")
+    else
+        copy(szPrefix, charsmax(szPrefix), RankNamesShort[GetPlayerRank(g_iPoints[id])])
+
+    new szCmd[12]
+    read_argv(0, szCmd, charsmax(szCmd))
+    new bool:bTeam = bool:equal(szCmd, "say_team")
+
+    new szName[33]
+    get_user_name(id, szName, charsmax(szName))
+
+    new szFull[256]
+    if (bTeam)
+        formatex(szFull, charsmax(szFull), "^x03(TEAM) ^x04[%s] ^x03%s^x01:  %s", szPrefix, szName, szText[start])
+    else
+        formatex(szFull, charsmax(szFull), "^x04[%s] ^x03%s^x01:  %s", szPrefix, szName, szText[start])
+
+    new players[MAX_PLAYERS], iNum
+    get_players(players, iNum, "c")
+    for (new i = 0; i < iNum; i++)
+    {
+        new viewer = players[i]
+        if (bTeam)
+        {
+            new iViewerTeam = get_user_team(viewer)
+            new iSenderTeam = get_user_team(id)
+            new bool:bViewerDead = !is_user_alive(viewer)
+            if (iViewerTeam != iSenderTeam && !bViewerDead) continue
+        }
+
+        message_begin(MSG_ONE_UNRELIABLE, g_iMsgSayText, _, viewer)
+        write_byte(id)
+        write_string(szFull)
+        message_end()
+    }
+
+    server_print("%s:  %s", szName, szText[start])
+
+    return PLUGIN_HANDLED
+}
+
+UnixToDate(iTimestamp, szOut[], iOutLen)
+{
+    new iDays   = iTimestamp / 86400
+    new iZ      = iDays + 719468
+    new iEra    = (iZ >= 0 ? iZ : iZ - 146096) / 146097
+    new iDoe    = iZ - iEra * 146097
+    new iYoe    = (iDoe - iDoe/1460 + iDoe/36524 - iDoe/146096) / 365
+    new iY      = iYoe + iEra * 400
+    new iDoy    = iDoe - (365*iYoe + iYoe/4 - iYoe/100)
+    new iMp     = (5*iDoy + 2) / 153
+    new iDay    = iDoy - (153*iMp + 2)/5 + 1
+    new iMonth  = iMp + (iMp < 10 ? 3 : -9)
+    if (iMonth <= 2) iY++
+    formatex(szOut, iOutLen, "%02d.%02d.%d", iDay, iMonth, iY)
+}
+
+FormatSeasonHeader(iSeason, szOut[], iOutLen)
+{
+    new szLabel[64]
+    new iStarted, iEnded
+
+    new szQ[128]
+    formatex(szQ, charsmax(szQ),
+        "SELECT label,started_at,ended_at FROM csr_seasons WHERE season=%d", iSeason)
+    new Handle:h = SQL_PrepareQuery(g_hSQL, "%s", szQ)
+    if (h != Empty_Handle && SQL_Execute(h) && SQL_MoreResults(h))
+    {
+        SQL_ReadResult(h, 0, szLabel, charsmax(szLabel))
+        iStarted = SQL_ReadResult(h, 1)
+        iEnded   = SQL_ReadResult(h, 2)
+    }
+    else
+        formatex(szLabel, charsmax(szLabel), "Season %d", iSeason)
+    if (h != Empty_Handle) SQL_FreeHandle(h)
+
+    new szStart[16], szEnd[16]
+    if (iStarted > 0)
+        UnixToDate(iStarted, szStart, charsmax(szStart))
+    if (iEnded > 0)
+        UnixToDate(iEnded, szEnd, charsmax(szEnd))
+
+    if (iStarted > 0 && iEnded > 0)
+        formatex(szOut, iOutLen, "%s: %s - %s", szLabel, szStart, szEnd)
+    else if (iStarted > 0)
+        formatex(szOut, iOutLen, "%s: %s - active", szLabel, szStart)
+    else
+        copy(szOut, iOutLen, szLabel)
 }
 
 BuildSeasonHTML(iSeason, szOut[], iOutLen, iLimit = 10)
 {
-    if (g_hSQL == Empty_Handle) return
+    if (g_hSQL == Empty_Handle)
+    {
+        SQL_Init()
+        if (g_hSQL == Empty_Handle) return
+    }
 
     static szTmp[512]
     static szRows[30][256]
@@ -928,15 +1043,8 @@ BuildSeasonHTML(iSeason, szOut[], iOutLen, iLimit = 10)
         SQL_FreeHandle(hTop)
     }
 
-    new szLabel[64]
-    new szLQ[128]
-    formatex(szLQ, charsmax(szLQ), "SELECT label FROM csr_seasons WHERE season=%d", iSeason)
-    new Handle:hLbl = SQL_PrepareQuery(g_hSQL, "%s", szLQ)
-    if (hLbl != Empty_Handle && SQL_Execute(hLbl) && SQL_MoreResults(hLbl))
-        SQL_ReadResult(hLbl, 0, szLabel, charsmax(szLabel))
-    else
-        formatex(szLabel, charsmax(szLabel), "Season %d", iSeason)
-    if (hLbl != Empty_Handle) SQL_FreeHandle(hLbl)
+    new szLabel[128]
+    FormatSeasonHeader(iSeason, szLabel, charsmax(szLabel))
 
     static szHTML[16384]
     szHTML[0] = EOS
@@ -973,21 +1081,18 @@ BuildSeasonHTML(iSeason, szOut[], iOutLen, iLimit = 10)
 
 BuildTopHTML()
 {
-    if (g_hSQL == Empty_Handle) return
+    if (g_hSQL == Empty_Handle)
+    {
+        SQL_Init()
+        if (g_hSQL == Empty_Handle) return
+    }
 
     static szHTML[16384]
     static szTmp[512]
     szHTML[0] = EOS
 
-    new szLabel[64]
-    new szLQ[128]
-    formatex(szLQ, charsmax(szLQ), "SELECT label FROM csr_seasons WHERE season=%d", g_iCurrentSeason)
-    new Handle:hLbl = SQL_PrepareQuery(g_hSQL, "%s", szLQ)
-    if (hLbl != Empty_Handle && SQL_Execute(hLbl) && SQL_MoreResults(hLbl))
-        SQL_ReadResult(hLbl, 0, szLabel, charsmax(szLabel))
-    else
-        formatex(szLabel, charsmax(szLabel), "Season %d", g_iCurrentSeason)
-    if (hLbl != Empty_Handle) SQL_FreeHandle(hLbl)
+    new szLabel[128]
+    FormatSeasonHeader(g_iCurrentSeason, szLabel, charsmax(szLabel))
 
     _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.w{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
     formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><div class='w'>", szLabel)
@@ -1072,7 +1177,6 @@ ShowTopMOTD(id, iReqSeason)
 {
     new szTitle[64]
 
-    // Past season: verify it exists in DB, then serve via KarLib iframe (?season=N)
     if (iReqSeason > 0 && iReqSeason != g_iCurrentSeason)
     {
         new szChkQ[96]
@@ -1087,7 +1191,7 @@ ShowTopMOTD(id, iReqSeason)
             return
         }
 
-        formatex(szTitle, charsmax(szTitle), "Ranked Play - Season %d", iReqSeason)
+        formatex(szTitle, charsmax(szTitle), "Ranked season %d", iReqSeason)
 
         if (g_bKarLibLoaded)
         {
@@ -1106,11 +1210,10 @@ ShowTopMOTD(id, iReqSeason)
         return
     }
 
-    // Current season: serve live cached HTML via KarLib
     if (g_szTopHTML[0] == EOS) BuildTopHTML()
     if (g_szTopHTML[0] == EOS) return
 
-    formatex(szTitle, charsmax(szTitle), "Ranked Play - Season %d", g_iCurrentSeason)
+    formatex(szTitle, charsmax(szTitle), "Ranked season %d", g_iCurrentSeason)
 
     new szServerIP[32]
     get_cvar_string("net_address", szServerIP, charsmax(szServerIP))
@@ -1175,6 +1278,12 @@ public OnPlayerSpawn(id)
 public OnRoundEnd(status, event, Float:tmDelay)
 {
     if (g_iMatchState != STATE_LIVE && g_iMatchState != STATE_CANCELLED)
+        return HC_CONTINUE
+
+    new mapname[32]
+    get_mapname(mapname, charsmax(mapname))
+
+    if (equali(mapname, "gg_", 3))
         return HC_CONTINUE
 
     if (status == 1) g_iTeamRounds[1]++
@@ -1256,6 +1365,7 @@ public OnPlayerKilled(victim, killer, shouldgib)
     if (get_member(killer, m_iTeam) == get_member(victim, m_iTeam))
     {
         g_iDmgToVictim[killer] = 0
+        if(get_cvar_num("mp_friendlyfire") == 1) AddScore(killer, SCORE_TEAMKILL)
         return HC_CONTINUE
     }
 
@@ -1317,17 +1427,29 @@ public OnBombDefused(defuser)
 public OnMapEnd()
 {
     new iPrevState = g_iMatchState
-    SetMatchState(STATE_ENDED)
-    if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] OnMapEnd called. State=%d Rounds=%d — results in 3s", iPrevState, g_iTotalRounds)
-    remove_task(TASK_MAP_END)
-    set_task(2.0, "Task_MapEnd", TASK_MAP_END)
+    if (iPrevState == STATE_WAITING || iPrevState == STATE_ENDED) return
+    // Detect map end via win conditions
+    new iWinLimit  = get_cvar_num("mp_winlimit")
+    new iMaxRounds = get_cvar_num("mp_maxrounds")
+    new iTimeLimit = get_cvar_num("mp_timelimit")
+    new bool:bWinLimitHit  = (iWinLimit  > 0 && (g_iTeamRounds[1] >= iWinLimit  || g_iTeamRounds[2] >= iWinLimit))
+    new bool:bMaxRoundsHit = (iMaxRounds > 0 && (g_iTeamRounds[1] + g_iTeamRounds[2]) >= iMaxRounds)
+    new bool:bTimeLimitHit = (iTimeLimit > 0 && get_timeleft() <= 0)
+    if (bWinLimitHit || bMaxRoundsHit || bTimeLimitHit | g_forcedwin == true)
+    {
+        SetMatchState(STATE_ENDED)
+        remove_task(TASK_MAP_END)
+        set_task(2.0, "Task_MapEnd", TASK_MAP_END)
+    }
+    else SetMatchState(STATE_CANCELLED)
+    if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] OnMapEnd called. State=%d Rounds=%d — results in 2s", iPrevState, g_iTotalRounds)
 }
 
 public Task_MapEnd()
 {
     new iPrevState = g_iMatchState
 
-    if (g_iTotalRounds == 0 || iPrevState == STATE_WARMUP || iPrevState == STATE_STARTING || iPrevState == STATE_WAITING)
+    if (g_iTotalRounds <= 0 || iPrevState == STATE_WARMUP || iPrevState == STATE_STARTING || iPrevState == STATE_WAITING)
     {
         if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Map end ignored: rounds=%d, prevstate=%d", g_iTotalRounds, iPrevState)
         ResetMapData()
@@ -1359,7 +1481,7 @@ public Task_MapEnd()
     new Float:fParticipation[MAX_PLAYERS + 1]
     new iQualPlayers[MAX_PLAYERS]
     new iQualNum = 0
-    new iMinRounds = get_pcvar_num(g_cvarMinRounds)
+    new iMinRounds = g_forcedwin == true ? 1 : get_pcvar_num(g_cvarMinRounds)
 
     for (new id = 1; id <= MAX_PLAYERS; id++)
     {
@@ -1504,9 +1626,9 @@ public Task_MapEnd()
     _H("<th class='pos'>#</th><th>NICK</th><th class='rk'>RANK</th><th>MMR</th><th>CHANGE</th><th>MATCH SCORE</th><th>PRESENCE</th>")
     _H("</tr></thead><tbody>")
 
-        for (new i = 0; i < iQualNum; i++)
-        {
-            new id       = iQualPlayers[i]
+    for (new i = 0; i < iQualNum; i++)
+    {
+        new id       = iQualPlayers[i]
             new iOld     = g_iPoints[id]
             new iNew     = iNewPoints[id]
             new iNewRank = GetPlayerRank(iNew)
@@ -1771,8 +1893,22 @@ public CmdRankSeasons(id, level, cid)
 }
 
 // NATIVES
+public _native_custom_win(plugin, params)
+{
+    if (g_iMatchState != STATE_LIVE && g_iMatchState != STATE_ENDED) return 0
+    g_forcedwin = true
+    OnMapEnd()
+    return 1
+}
+
 public _native_get_points(plugin, params)
     return g_iPoints[get_param(1)]
+
+public _native_add_score(plugin, params)
+{
+    new id = get_param(1)
+    AddScore(id, get_param(2))
+}
 
 public _native_get_rank_name(plugin, params)
 {

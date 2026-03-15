@@ -1,31 +1,35 @@
 [en]
-STATE_WARMUP_START = ^4[CSR]^1 Warmup started! Match begins in ^3%d^1 sec.
-STATE_RESTARTING = ^4[CSR]^1 Warmup over. Prepare to fight...
-STATE_LIVE = ^4[CSR] ^3LIVE! LIVE! LIVE!^1 Ranked match is active. GLHF!
-STATE_WAITING = ^4[CSR]^1 Waiting for more human players... (^3%d^1 required)
-STATE_RESUMED = ^4[CSR]^1 Enough players rejoined. Ranked play resumed!
-RANK_NOT_ENOUGH = ^4[CSR]^1 Not enough players (^3%d^1/^3%d^1 needed). Skipping MMR Changes.
-RANK_WRONG_SEASON = ^4[CSR]^1 Season %d does not exist.
+STATE_WARMUP_START = ^3[CSR]^4 Warmup started! Match begins in ^1%d^4 sec.
+STATE_RESTARTING = ^3[CSR]^4 Warmup over. Prepare to fight...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Ranked match is active. GLHF!
+STATE_WAITING = ^3[CSR]^4 Waiting for more human players... (^1%d^4 required)
+STATE_RESUMED = ^3[CSR]^4 Enough players rejoined. Ranked play resumed!
+RANK_NOT_ENOUGH = ^3[CSR]^4 Not enough players (^1%d^4/^1%d^4 needed). Skipping MMR Changes.
+RANK_WRONG_SEASON = ^3[CSR]^4 Season %d does not exist.
+RANK_WELCOME_1 = ^4This server uses ^3CSR ^4ranking system. Play games, earn MMR to rank up.
+RANK_WELCOME_2 = ^4Type ^3/top^4 to see top30 of current season. ^3/top 1^4 displays top10 of season 1 and so on.
 HUD_PLACEMENT = [CSR] Season %d | Placement %d/%d
 HUD_RANKED = [CSR] Season %d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Unranked <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== WARMUP ==-
-ADMIN_FORCE_RECALC = ^4[CSR]^1 Admin forced map-end ranking calculation.
-SEASON_STARTED = ^4[CSR]^1 Season ^3%d^1 has begun! (%s) | All player rankings have reset. GLHF!
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Admin forced map-end ranking calculation.
+SEASON_STARTED = ^3[CSR]^1 Season ^3%d^1 has begun! (%s) | All player rankings have reset. GLHF!
 
 [pl]
-STATE_WARMUP_START = ^4[CSR]^1 Rozgrzewka trwa! Mecz rozpocznie się za ^3%d^1 sek.
-STATE_RESTARTING = ^4[CSR]^1 Koniec rozgrzewki! Przygotuj się do walki...
-STATE_LIVE = ^4[CSR] ^3LIVE! LIVE! LIVE!^1 Mecz rankingowy rozpoczety. GLHF!
-STATE_WAITING = ^4[CSR]^1 Oczekiwanie na wiecej graczy... (Potrzebne ^3%d^1)
-STATE_RESUMED = ^4[CSR]^1 Dołaczyla odpowiednia ilosc osob. mecz rankingowy wznowiony!
-RANK_NOT_ENOUGH = ^4[CSR]^1 Za malo graczy (potrzebne ^3%d^1/^3%d^1). Pomijam MMR.
-RANK_WRONG_SEASON = ^4[CSR]^1 Sezon %d nie istnieje.
+STATE_WARMUP_START = ^3[CSR]^4 Rozgrzewka trwa! Mecz rozpocznie się za ^1%d^4 sek.
+STATE_RESTARTING = ^3[CSR]^4 Koniec rozgrzewki! Przygotuj się do walki...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Mecz rankingowy rozpoczety. GLHF!
+STATE_WAITING = ^3[CSR]^4 Oczekiwanie na wiecej graczy... (Potrzebne ^1%d^4)
+STATE_RESUMED = ^3[CSR]^4 Dołaczyla odpowiednia ilosc osob. mecz rankingowy wznowiony!
+RANK_NOT_ENOUGH = ^3[CSR]^4 Za malo graczy (potrzebne ^1%d^4/^1%d^4). Pomijam MMR.
+RANK_WRONG_SEASON = ^3[CSR]^4 Sezon %d nie istnieje.
+RANK_WELCOME_1 = ^4Ten serwer uzywa system rankingowy ^3CSR^4. Graj, zdobywaj MMR by awansowac.
+RANK_WELCOME_2 = ^4Napisz ^3/top^4 by zobaczyc top30 obecnego sezonu. ^3/top 1^4 pokaze top10 sezonu #1 itd.
 HUD_PLACEMENT = [CSR] Sezon %d | Kalibracja %d/%d
 HUD_RANKED = [CSR] Sezon %d | %s | %d/%d MMR | Top %s
-HUD_WATCH_PLACEMENT = >> Bez rangi  <<
+HUD_WATCH_PLACEMENT = >> Bez rangi <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== ROZGRZEWKA ==-
-ADMIN_FORCE_RECALC = ^4[CSR]^1 Admin wymusil koniec meczu rankingowego.
-SEASON_STARTED = ^4[CSR]^1 Sezon ^3%d^1 rozpoczety! (%s) | MMR graczy został zresetowany. GLHF!
+ADMIN_FORCE_RECALC = ^3[CSR]^4 Admin wymusil koniec meczu rankingowego.
+SEASON_STARTED = ^3[CSR]^4 Sezon ^3%d^4 rozpoczety! (%s) | MMR graczy został zresetowany. GLHF!
