@@ -33,3 +33,111 @@ HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== ROZGRZEWKA ==-^n%d
 ADMIN_FORCE_RECALC = ^3[CSR]^4 Admin wymusil koniec meczu rankingowego.
 SEASON_STARTED = ^3[CSR]^4 Sezon ^3%d^4 rozpoczety! (%s) | MMR graczy został zresetowany. GLHF!
+
+[de]
+STATE_WARMUP_START = ^3[CSR]^4 Aufwärmphase gestartet! Match beginnt in ^1%d^4 Sek.
+STATE_RESTARTING = ^3[CSR]^4 Aufwärmphase beendet. Bereitet euch auf den Kampf vor...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Ranglistenspiel ist aktiv. GLHF!
+STATE_WAITING = ^3[CSR]^4 Warten auf weitere menschliche Spieler... (^1%d^4 benötigt)
+STATE_RESUMED = ^3[CSR]^4 Genug Spieler sind zurückgekehrt. Ranglistenspiel fortgesetzt!
+RANK_NOT_ENOUGH = ^3[CSR]^4 Nicht genug Spieler (^1%d^4/^1%d^4 benötigt). MMR-Änderungen werden übersprungen.
+RANK_WRONG_SEASON = ^3[CSR]^4 Saison %d existiert nicht.
+RANK_WELCOME_1 = ^4Dieser Server verwendet das ^3CSR ^4Rangsystem. Spiele Matches und verdiene MMR, um aufzusteigen.
+RANK_WELCOME_2 = ^4Tippe ^3/top^4 um die Top30 der aktuellen Saison zu sehen. ^3/top 1^4 zeigt die Top10 von Saison 1 usw.
+HUD_PLACEMENT = [CSR] Saison %d | Platzierung %d/%d
+HUD_RANKED = [CSR] Saison %d | %s | %d/%d MMR | Top %s
+HUD_WATCH_PLACEMENT = >> Unranked <<
+HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
+HUD_WARMUP = -== AUFWÄRMEN ==-^n%d
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Admin hat die Rangberechnung am Mapende erzwungen.
+SEASON_STARTED = ^3[CSR]^1 Saison ^3%d^1 hat begonnen! (%s) | Alle Spielerränge wurden zurückgesetzt. GLHF!
+
+[fr]
+STATE_WARMUP_START = ^3[CSR]^4 Échauffement commencé ! Le match commence dans ^1%d^4 sec.
+STATE_RESTARTING = ^3[CSR]^4 Échauffement terminé. Préparez-vous à combattre...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Match classé actif. GLHF !
+STATE_WAITING = ^3[CSR]^4 En attente de plus de joueurs humains... (^1%d^4 requis)
+STATE_RESUMED = ^3[CSR]^4 Assez de joueurs ont rejoint. Match classé repris !
+RANK_NOT_ENOUGH = ^3[CSR]^4 Pas assez de joueurs (^1%d^4/^1%d^4 requis). Changements MMR ignorés.
+RANK_WRONG_SEASON = ^3[CSR]^4 La saison %d n'existe pas.
+RANK_WELCOME_1 = ^4Ce serveur utilise le système de classement ^3CSR ^4. Jouez et gagnez du MMR pour monter de rang.
+RANK_WELCOME_2 = ^4Tapez ^3/top^4 pour voir le top30 de la saison actuelle. ^3/top 1^4 affiche le top10 de la saison 1, etc.
+HUD_PLACEMENT = [CSR] Saison %d | Placement %d/%d
+HUD_RANKED = [CSR] Saison %d | %s | %d/%d MMR | Top %s
+HUD_WATCH_PLACEMENT = >> Non classé <<
+HUD_WATCH_RANKED = >> %s (%d MMR) | Top : %d <<
+HUD_WARMUP = -== ÉCHAUFFEMENT ==-^n%d
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Un admin a forcé le recalcul du classement à la fin de la map.
+SEASON_STARTED = ^3[CSR]^1 La saison ^3%d^1 a commencé ! (%s) | Tous les classements des joueurs ont été réinitialisés. GLHF !
+
+[uk]
+STATE_WARMUP_START = ^3[CSR]^4 Розминка розпочалася! Матч почнеться через ^1%d^4 сек.
+STATE_RESTARTING = ^3[CSR]^4 Розминку завершено. Готуйтеся до бою...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Рейтинговий матч активний. GLHF!
+STATE_WAITING = ^3[CSR]^4 Очікування на більше гравців... (потрібно ^1%d^4)
+STATE_RESUMED = ^3[CSR]^4 Достатньо гравців повернулося. Рейтингову гру відновлено!
+RANK_NOT_ENOUGH = ^3[CSR]^4 Недостатньо гравців (^1%d^4/^1%d^4 потрібно). Зміни MMR пропущено.
+RANK_WRONG_SEASON = ^3[CSR]^4 Сезон %d не існує.
+RANK_WELCOME_1 = ^4Цей сервер використовує рейтингову систему ^3CSR ^4. Грайте та отримуйте MMR, щоб підвищувати ранг.
+RANK_WELCOME_2 = ^4Введіть ^3/top^4 щоб побачити топ30 поточного сезону. ^3/top 1^4 покаже топ10 сезону 1 тощо.
+HUD_PLACEMENT = [CSR] Сезон %d | Калібрування %d/%d
+HUD_RANKED = [CSR] Сезон %d | %s | %d/%d MMR | Топ %s
+HUD_WATCH_PLACEMENT = >> Без рангу <<
+HUD_WATCH_RANKED = >> %s (%d MMR) | Топ: %d <<
+HUD_WARMUP = -== РОЗМИНКА ==-^n%d
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Адміністратор примусово запустив підрахунок рейтингу після карти.
+SEASON_STARTED = ^3[CSR]^1 Сезон ^3%d^1 розпочався! (%s) | Рейтинги всіх гравців скинуто. GLHF!
+
+[ru]
+STATE_WARMUP_START = ^3[CSR]^4 Разминка началась! Матч начнётся через ^1%d^4 сек.
+STATE_RESTARTING = ^3[CSR]^4 Разминка окончена. Приготовьтесь к бою...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Рейтинговый матч активен. GLHF!
+STATE_WAITING = ^3[CSR]^4 Ожидание игроков... (нужно ^1%d^4)
+STATE_RESUMED = ^3[CSR]^4 Достаточно игроков вернулось. Рейтинговый матч продолжен!
+RANK_NOT_ENOUGH = ^3[CSR]^4 Недостаточно игроков (^1%d^4/^1%d^4 требуется). Изменения MMR пропущены.
+RANK_WRONG_SEASON = ^3[CSR]^4 Сезон %d не существует.
+RANK_WELCOME_1 = ^4Этот сервер использует рейтинговую систему ^3CSR ^4. Играйте и зарабатывайте MMR, чтобы повышать ранг.
+RANK_WELCOME_2 = ^4Введите ^3/top^4 чтобы увидеть топ30 текущего сезона. ^3/top 1^4 покажет топ10 сезона 1 и т.д.
+HUD_PLACEMENT = [CSR] Сезон %d | Калибровка %d/%d
+HUD_RANKED = [CSR] Сезон %d | %s | %d/%d MMR | Топ %s
+HUD_WATCH_PLACEMENT = >> Без ранга <<
+HUD_WATCH_RANKED = >> %s (%d MMR) | Топ: %d <<
+HUD_WARMUP = -== РАЗМИНКА ==-^n%d
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Администратор принудительно запустил пересчёт рейтинга в конце карты.
+SEASON_STARTED = ^3[CSR]^1 Сезон ^3%d^1 начался! (%s) | Рейтинги всех игроков были сброшены. GLHF!
+
+[es]
+STATE_WARMUP_START = ^3[CSR]^4 ¡Calentamiento iniciado! La partida comienza en ^1%d^4 seg.
+STATE_RESTARTING = ^3[CSR]^4 Calentamiento terminado. Prepárate para luchar...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Partida clasificatoria activa. GLHF!
+STATE_WAITING = ^3[CSR]^4 Esperando más jugadores humanos... (^1%d^4 necesarios)
+STATE_RESUMED = ^3[CSR]^4 Suficientes jugadores han regresado. ¡Partida clasificatoria reanudada!
+RANK_NOT_ENOUGH = ^3[CSR]^4 No hay suficientes jugadores (^1%d^4/^1%d^4 necesarios). Se omiten cambios de MMR.
+RANK_WRONG_SEASON = ^3[CSR]^4 La temporada %d no existe.
+RANK_WELCOME_1 = ^4Este servidor usa el sistema de ranking ^3CSR ^4. Juega partidas y gana MMR para subir de rango.
+RANK_WELCOME_2 = ^4Escribe ^3/top^4 para ver el top30 de la temporada actual. ^3/top 1^4 muestra el top10 de la temporada 1, etc.
+HUD_PLACEMENT = [CSR] Temporada %d | Colocación %d/%d
+HUD_RANKED = [CSR] Temporada %d | %s | %d/%d MMR | Top %s
+HUD_WATCH_PLACEMENT = >> Sin rango <<
+HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
+HUD_WARMUP = -== CALENTAMIENTO ==-^n%d
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Un administrador forzó el cálculo del ranking al final del mapa.
+SEASON_STARTED = ^3[CSR]^1 ¡La temporada ^3%d^1 ha comenzado! (%s) | El ranking de todos los jugadores ha sido reiniciado. GLHF!
+
+[cs]
+STATE_WARMUP_START = ^3[CSR]^4 Rozcvička začala! Zápas začne za ^1%d^4 sek.
+STATE_RESTARTING = ^3[CSR]^4 Rozcvička skončila. Připravte se na boj...
+STATE_LIVE = ^3[CSR] LIVE! LIVE! LIVE!^4 Hodnocený zápas je aktivní. GLHF!
+STATE_WAITING = ^3[CSR]^4 Čekání na více hráčů... (potřeba ^1%d^4)
+STATE_RESUMED = ^3[CSR]^4 Dostatek hráčů se vrátil. Hodnocený zápas pokračuje!
+RANK_NOT_ENOUGH = ^3[CSR]^4 Nedostatek hráčů (^1%d^4/^1%d^4 potřeba). Změny MMR přeskočeny.
+RANK_WRONG_SEASON = ^3[CSR]^4 Sezóna %d neexistuje.
+RANK_WELCOME_1 = ^4Tento server používá rankingový systém ^3CSR ^4. Hraj zápasy a získávej MMR pro zvýšení ranku.
+RANK_WELCOME_2 = ^4Napiš ^3/top^4 pro zobrazení top30 aktuální sezóny. ^3/top 1^4 zobrazí top10 sezóny 1 atd.
+HUD_PLACEMENT = [CSR] Sezóna %d | Kalibrace %d/%d
+HUD_RANKED = [CSR] Sezóna %d | %s | %d/%d MMR | Top %s
+HUD_WATCH_PLACEMENT = >> Bez ranku <<
+HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
+HUD_WARMUP = -== ROZCVIČKA ==-^n%d
+ADMIN_FORCE_RECALC = ^3[CSR]^1 Admin vynutil přepočet rankingu na konci mapy.
+SEASON_STARTED = ^3[CSR]^1 Sezóna ^3%d^1 začala! (%s) | Ranking všech hráčů byl resetován. GLHF!
