@@ -20,6 +20,7 @@ __Anty-smurfing__ - Gracze nie mogą spaść z MMR bardziej niż 50% swojego naj
 __Tarcza__ - Gracz traci mniej MMR na niższych rangach, mniej irytujące dla każuali  
 __Gry kwalifikacyjne__ - Gracz musi rozegrać 5 meczy by otrzymać rangę  
 __Sezony__ - Każdy sezon ma niezależny ranking  
+__Anty ragequit__ - Jeżeli gracz wyjdzie z serwera, jego statystyki zostaną zapisane dopóki nie zmieni się mapa, lub dopóki nie wróci na serwer
 Dane z poprzednich sezonów są zachowane w bazie danych. Admini serwera mogą uruchomić nowy sezon rankingowy w dowolnym dniu wpisując komendę.
 _____________________
 #### SCREENY
@@ -30,7 +31,7 @@ _____________________
 _____________________
 #### UKRYTY SYSTEM PUKTOWY
 
-+1 60 DMG w przeciwnika (rank_dmg_cap blokuje maksymalną ilość DMG w rundzie za jaką gracz może otrzymać punkty)   
++1 40 DMG w przeciwnika (rank_dmg_cap blokuje maksymalną ilość DMG w rundzie za jaką gracz może otrzymać punkty)   
 +1 Headshot / noż / granat / pistol kill   
 +1 Zabójstwo ze słabej broni (min. 50 DMG w ofiarę)  
 +1 Za każde kolejne zabójstwo w rundzie (aż do Ejsika)  
@@ -39,7 +40,8 @@ _____________________
 +3 Rozbrojenie bomby  
 +1 Wygranie rundy  
 -1 Przegranie rundy  
--1 Śmierć z rąk innego gracza  
+-1 Śmierć z rąk innego gracza 
+-2 Teamkill 
 +2 KD Ratio 2.0+  
 +1 KD Ratio > 1.0  
 -2 KD Ratio < 1.0  
@@ -67,6 +69,7 @@ __rank_min_players 4__ - Minimalna ilość prawdziwych graczy by rozpocząć ran
 __rank_ideal_players 10__ - Idealna ilość graczy na serwerze (prawdziwi+boty) by zdobyć 100% MMR w meczu  
 __rank_min_rounds 5__ - Minimalna ilość rund jaką gracz musi zagrać by się liczyć w meczu rankingowym  
 __rank_score_cap 10__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
+__rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(nie MMR, punkty meczu)
 __rank_dmg_cap 540__ - Maksymalna ilość obrażeń jaką gracz może zamienić na punkty w 1 rundzie  
 __rank_warmup_time 45__ - Czas rozgrzewki  
 __rank_double_gain 0__ - Włącza podwójny zarobek MMR(użyteczne na happy hours/2xp weekendy)  
