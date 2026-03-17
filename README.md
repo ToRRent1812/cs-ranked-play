@@ -69,7 +69,7 @@ __rank_min_players 4__ - Minimum amount of human players to start ranked match
 __rank_ideal_players 10__ - Ideal amount of players (human+bots) for max MMR gain/loss  
 __rank_min_rounds 5__ - Minimum amount of rounds a player need to play to be eligible for MMR change  
 __rank_score_cap 10__ - Maximum score a player can earn in a single round  
-__rank_match_win_bonus 0__ - Give team that won a match extra map score(useful for pro/scrims/pugs)
+__rank_match_win_bonus 0__ - Give team that won a match extra map score(useful for pro/scrims/pugs)  
 __rank_dmg_cap 550__ - Maximum damage that counts towards player score in a single round  
 __rank_warmup_time 45__ - Unranked warmup time in seconds  
 __rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)   
