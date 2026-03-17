@@ -21,5 +21,8 @@ native csr_get_state()
 // Trigger MMR calculation when gamemode does not have classic win by rounds mechanic (gungame, deathmatch)
 native csr_custom_win()
 
+// Get the current match score of the player.
+native csr_get_score(playerid)
+
 // Add/Substract match score from the player (like custom conditions, ex: gungame win)
 native csr_add_score(playerid, score)
