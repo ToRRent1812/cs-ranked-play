@@ -69,7 +69,7 @@ __rank_min_players 4__ - Minimalna ilość prawdziwych graczy by rozpocząć ran
 __rank_ideal_players 10__ - Idealna ilość graczy na serwerze (prawdziwi+boty) by zdobyć 100% MMR w meczu  
 __rank_min_rounds 5__ - Minimalna ilość rund jaką gracz musi zagrać by się liczyć w meczu rankingowym  
 __rank_score_cap 10__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
-__rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(nie MMR, punkty meczu)
+__rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(nie MMR, punkty meczu)  
 __rank_dmg_cap 540__ - Maksymalna ilość obrażeń jaką gracz może zamienić na punkty w 1 rundzie  
 __rank_warmup_time 45__ - Czas rozgrzewki  
 __rank_double_gain 0__ - Włącza podwójny zarobek MMR(użyteczne na happy hours/2xp weekendy)  
