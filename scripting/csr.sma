@@ -35,7 +35,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.1"
+#define VERSION    "1.1.1"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -256,6 +256,16 @@ public plugin_cfg()
     g_DisconnectCounter = 0;
     set_task(3.0, "Task_SQL_Init")
     set_cvar_num("mp_timelimit", g_old_timelimit)
+
+    if(get_pcvar_num(g_cvarMinPlayers) < 1) set_pcvar_num(g_cvarMinPlayers, 1)
+    if(get_pcvar_num(g_cvarIdealPlayers) < 1) set_pcvar_num(g_cvarIdealPlayers, 1)
+    if(get_pcvar_num(g_cvarMinRounds) < 1) set_pcvar_num(g_cvarMinRounds, 1)
+    if(get_pcvar_num(g_cvarScoreCap) < 5) set_pcvar_num(g_cvarScoreCap, 5)
+    if(get_cvar_num("mp_winlimit") < 1) set_pcvar_num(g_cvarScoreCap, 0)
+    if(get_pcvar_num(g_cvarDmgCap) < 100) set_pcvar_num(g_cvarDmgCap, 100)
+    if(get_pcvar_num(g_cvarMatchwin) < 0) set_pcvar_num(g_cvarMatchwin, 0)
+    if(get_pcvar_num(g_cvarDoubleGain) < 0) set_pcvar_num(g_cvarDoubleGain, 0)
+    if(get_pcvar_num(g_cvarWarmupTime) < 0) set_pcvar_num(g_cvarWarmupTime, 0)
 
     // KarLib stuff
     if (!g_bKarLibLoaded)
@@ -1392,7 +1402,7 @@ public AddScore(id, iAmount)
     if (iAmount > 0)
     {
         new iRoom = get_pcvar_num(g_cvarScoreCap) - g_iRoundScoreEarned[id]
-        if (iRoom <= 0) return
+        if (iRoom <= 0 && get_pcvar_num(g_cvarScoreCap) > 0) return
         if (iAmount > iRoom) iAmount = iRoom
         g_iRoundScoreEarned[id] += iAmount
     }
@@ -1708,6 +1718,7 @@ public Task_MapEnd()
             if(iChange > MMR_MAX_GAIN) iChange = MMR_MAX_GAIN
         }
         iNewPoints[id] = clamp(g_iPoints[id] + iChange, g_iPeakPoints[id] / 2, MMR_CAP)
+        iNewPoints[id] = clamp(iNewPoints[id], 0, MMR_CAP)
     }
 
     // Apply results and build MOTD
