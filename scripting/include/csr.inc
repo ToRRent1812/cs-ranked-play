@@ -26,3 +26,7 @@ native csr_get_score(playerid)
 
 // Add/Substract match score from the player (like custom conditions, ex: gungame win)
 native csr_add_score(playerid, score)
+
+
+// Set the exact amount of match score for the player (like custom conditions, ex: gungame win)
+native csr_set_score(playerid, score)

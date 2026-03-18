@@ -35,7 +35,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.1.1"
+#define VERSION    "1.1.2"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING   0
@@ -260,7 +260,7 @@ public plugin_cfg()
     if(get_pcvar_num(g_cvarMinPlayers) < 1) set_pcvar_num(g_cvarMinPlayers, 1)
     if(get_pcvar_num(g_cvarIdealPlayers) < 1) set_pcvar_num(g_cvarIdealPlayers, 1)
     if(get_pcvar_num(g_cvarMinRounds) < 1) set_pcvar_num(g_cvarMinRounds, 1)
-    if(get_pcvar_num(g_cvarScoreCap) < 5) set_pcvar_num(g_cvarScoreCap, 5)
+    if(get_pcvar_num(g_cvarScoreCap) < 0) set_pcvar_num(g_cvarScoreCap, 0)
     if(get_cvar_num("mp_winlimit") < 1) set_pcvar_num(g_cvarScoreCap, 0)
     if(get_pcvar_num(g_cvarDmgCap) < 100) set_pcvar_num(g_cvarDmgCap, 100)
     if(get_pcvar_num(g_cvarMatchwin) < 0) set_pcvar_num(g_cvarMatchwin, 0)
@@ -347,6 +347,7 @@ public plugin_natives()
     register_native("csr_custom_win","_native_custom_win")
     register_native("csr_add_score","_native_add_score")
     register_native("csr_get_score","_native_get_score")
+    register_native("csr_set_score","_native_set_score")
 }
 
 SetMatchState(iNew)
@@ -1401,10 +1402,13 @@ public AddScore(id, iAmount)
 
     if (iAmount > 0)
     {
-        new iRoom = get_pcvar_num(g_cvarScoreCap) - g_iRoundScoreEarned[id]
-        if (iRoom <= 0 && get_pcvar_num(g_cvarScoreCap) > 0) return
-        if (iAmount > iRoom) iAmount = iRoom
-        g_iRoundScoreEarned[id] += iAmount
+        if(get_pcvar_num(g_cvarScoreCap) > 0)
+        {
+            new iRoom = get_pcvar_num(g_cvarScoreCap) - g_iRoundScoreEarned[id]
+            if (iRoom <= 0) return
+            if (iAmount > iRoom) iAmount = iRoom
+            g_iRoundScoreEarned[id] += iAmount
+        }
     }
     g_iMatchScore[id] += iAmount
 }
@@ -2028,6 +2032,9 @@ public _native_add_score(plugin, params)
     new id = get_param(1)
     AddScore(id, get_param(2))
 }
+
+public _native_set_score(plugin, params)
+    g_iMatchScore[get_param(1)] = get_param(2)
 
 public _native_get_score(plugin, params)
 {
