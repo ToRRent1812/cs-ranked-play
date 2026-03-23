@@ -7,7 +7,6 @@ _____________________
 #### DEMONSTRACJA
 Możesz zobaczyć plugin w użyciu na moich serwerach testowych  
 1.6: ```connect 51.68.155.216:27015```  
-CZero: ```connect 51.68.155.216:27016```  
 _____________________
 #### JAK TO DZIAŁA
 
@@ -38,6 +37,8 @@ _____________________
 +1 Zabójstwo z dużej odległości  
 +2 Podłożenie bomby  
 +3 Rozbrojenie bomby  
++1 Uratowanie hosta  
+-1 Zabicie hosta  
 +1 Wygranie rundy  
 -1 Przegranie rundy  
 -1 Śmierć z rąk innego gracza 
