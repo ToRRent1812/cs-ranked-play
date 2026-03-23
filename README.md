@@ -92,6 +92,8 @@ _____________________
 #### PLAYER CHAT COMMANDS
 __!top__ or __/top__ - Open Top leaderboard for current season  
 __!top 1__ or __/top 1__ - Open Top10 leaderboard for season 1  
+__!rank__ or __/rank__ - Show You and players close to you in leaderboard  
+__!history__ or __/history__ - Show your seasonal rank history  
 _____________________
 #### DISCLAIMER
 To add MySQL/MariaDB support, I used Claude AI. You have been warned
