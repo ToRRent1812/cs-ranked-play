@@ -7,7 +7,6 @@ _____________________
 #### DEMONSTRATION
 You can test the plugin with bots on my servers  
 1.6: ```connect 51.68.155.216:27015```  
-CZero: ```connect 51.68.155.216:27016```  
 _____________________
 #### HOW IT WORKS
 
@@ -38,6 +37,8 @@ _____________________
 +1 Longshot kill  
 +2 Bomb plant  
 +3 Bomb Defuse  
++1 Hostage rescued  
+-1 Hostage killed  
 +1 Round won  
 -1 Round lost  
 -1 PvP death  
