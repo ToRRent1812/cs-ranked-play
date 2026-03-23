@@ -92,6 +92,8 @@ _____________________
 #### KOMENDY DLA GRACZY W CZACIE
 __!top__ lub __/top__ - Otwiera Top30 najlepszych graczy sezonu  
 __!top 1__ lub __/top 1__ - Otwiera Top10 najlepszych graczy pierwszego sezonu  
+__!rank__ lub __/rank__ - Pokaże Ciebie i osoby obok Ciebie w rankingu
+__!history__ lub __/history__ - Pokaże twoją sezonową historię
 _____________________
 #### UWAGA
 By dodać integrację MySQL/MariaDB, użyłem sztucznej inteligencji Claude.
