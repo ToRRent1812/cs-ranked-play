@@ -11,7 +11,7 @@ _____________________
 #### HOW IT WORKS
 
 Plugin rates players by earning hidden points each round based on their performance  (damage, kills, objectives, etc)  
-At map end, players are sorted by SPR (score per rounds played)  
+At map end, players are sorted by SPM (score per minute)  
 and then compared to each other to determine MMR gain/lose  
 
 __Participation scaling__ - The more rounds player played, the bigger percentage of final MMR gain/lose he will get  
