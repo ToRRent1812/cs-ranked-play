@@ -11,8 +11,8 @@ _____________________
 #### JAK TO DZIAŁA
 
 Plugin ocenia w ukryciu graczy na podstawie różnych czynników jak obrażenia, zabójstwa, rozbrajanie bomby itd.    
-Pod koniec meczu, gracze są sortowani przez WNR (Wynik Na Rundę)  
-a później porównywani między sobą by obliczyć ile MMR gracz otrzyma/straci  
+Pod koniec meczu, gracze są sortowani przez WNM (Wynik Na Minutę)  
+a później porównywani między sobą by obliczyć, ile MMR gracz otrzyma/straci  
 
 __Ocena obecności__ - Im więcej rund zagrasz, tym więcej punktów MMR dostaniesz/stracisz  
 __Anty-smurfing__ - Gracze nie mogą spaść z MMR bardziej niż 50% swojego najlepszego rezultatu  
@@ -30,25 +30,36 @@ _____________________
 _____________________
 #### UKRYTY SYSTEM PUKTOWY
 
-+1 40 DMG w przeciwnika (rank_dmg_cap blokuje maksymalną ilość DMG w rundzie za jaką gracz może otrzymać punkty)   
-+1 Headshot / noż / granat / pistol kill   
-+1 Zabójstwo ze słabej broni (min. 50 DMG w ofiarę)  
-+1 Za każde kolejne zabójstwo w rundzie (aż do Ejsika)  
-+1 Zabójstwo z dużej odległości  
-+2 Podłożenie bomby  
-+3 Rozbrojenie bomby  
-+1 Uratowanie hosta  
--1 Zabicie hosta  
-+1 Wygranie rundy  
--1 Przegranie rundy  
--1 Śmierć z rąk innego gracza 
--2 Teamkill 
-+2 KD Ratio 2.0+  
-+1 KD Ratio > 1.0  
--2 KD Ratio < 1.0  
+1 pkt obrażeń = 1 punkt  
++20 Headshot/noż/granat/pistoletowe zabójstwo  
+20% bonus za zadanie obrażeń ze słabej broni  
++10 zabójstwo z dystansu  
++30 Podłożenie bomby  
++40 Rozbrojenie bomby  
++15 Uratowanie zakładnika  
+-50 Zabójstwo zakładnika  
++25 Wygranie rundy  
+-15 Przegranie rundy  
+-50 Śmierć  
+-25 Zabójstwo sojusznika  
+5*seria Bonus za wielokrotne zabójstwa aż do EJSA
   
-Modyfikatory WNR  
-__Obecność__ 0-50% -1 | 50-65% -0.5 | 65-80% 0 | 80-90% +0.5 | 90-100% +1
+#### Modyfikatory WNM 
+Te zmienne modifykują WNM na końcu meczu 
+
+| OBECNOŚĆ % | WNM  |
+| ---------- | ---- |
+| <50%       | -20% |
+| 50-65%     | -10% |
+| 80-90%     | +10% |
+| 90-100%    | +20% |
+
+| KD RATIO   | WNM  |
+| ---------- | ---- |
+| <0.5       | -20% |
+| 0.5-1.0    | -10% |
+| 1.5-2.0    | +10% |
+| >2.0       | +20% |
 
 #### RANGI
 Takie same jak w CS:GO, Od Silver 1 do Global Elite (5000 MMR)
@@ -68,10 +79,9 @@ _____________________
 __rank_debug 0__ - Włącza dodatkowe logowanie  
 __rank_min_players 4__ - Minimalna ilość prawdziwych graczy by rozpocząć ranking na mapie  
 __rank_ideal_players 10__ - Idealna ilość graczy na serwerze (prawdziwi+boty) by zdobyć 100% MMR w meczu  
-__rank_min_rounds 5__ - Minimalna ilość rund jaką gracz musi zagrać by się liczyć w meczu rankingowym  
-__rank_score_cap 10__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
+__rank_min_minutes 5__ - Minimalna ilość minut jaką gracz musi zagrać by się liczyć w meczu rankingowym  
+__rank_score_cap 750__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
 __rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(nie MMR, punkty meczu)  
-__rank_dmg_cap 540__ - Maksymalna ilość obrażeń jaką gracz może zamienić na punkty w 1 rundzie  
 __rank_warmup_time 45__ - Czas rozgrzewki  
 __rank_double_gain 0__ - Włącza podwójny zarobek MMR(użyteczne na happy hours/2xp weekendy)  
 __rank_karlib_port 8090__ - Port który serwer musi mieć otwarty, by wyświetlać wyniki  
@@ -90,10 +100,10 @@ __amx_rank_newseason__ - Rozpocznij nowy sezon rankingowy
 __amx_rank_seasons__ - Pokaż listę wszystkich sezonów rankingowych z datami  
 _____________________
 #### KOMENDY DLA GRACZY W CZACIE
-__!top__ lub __/top__ - Otwiera Top30 najlepszych graczy sezonu  
-__!top 1__ lub __/top 1__ - Otwiera Top10 najlepszych graczy pierwszego sezonu  
-__!rank__ lub __/rank__ - Pokaże Ciebie i osoby obok Ciebie w rankingu  
-__!history__ lub __/history__ - Pokaże twoją sezonową historię  
+__/top__ - Otwiera Top30 najlepszych graczy sezonu  
+__/top 1__ - Otwiera Top10 najlepszych graczy pierwszego sezonu  
+__/rank__ - Pokaże Ciebie i osoby obok Ciebie w rankingu  
+__/history__ - Pokaże twoją sezonową historię  
 _____________________
 #### UWAGA
 By dodać integrację MySQL/MariaDB, użyłem sztucznej inteligencji Claude.
