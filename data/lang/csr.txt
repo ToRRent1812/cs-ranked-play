@@ -10,7 +10,7 @@ RANK_WELCOME_1 = ^4This server uses ^3CSR ^4ranking system. Play games, earn MMR
 RANK_WELCOME_2 = ^3/top^4 to see top30 of current season. ^3/top 1^4 displays top10 of season 1 and so on.
 RANK_WELCOME_3 = ^3/rank^4 shows You in leaderboard. ^3/history^4 shows your seasonal data.
 HUD_PLACEMENT = [CSR] Season %d | Placement %d/%d
-HUD_RANKED = [CSR] Season %d | %s | %d/%d MMR | Top %s
+HUD_RANKED = [CSR] Season %d | Match #%d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Unranked <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== WARMUP ==-^n%d
@@ -29,7 +29,7 @@ RANK_WELCOME_1 = ^4Ten serwer uzywa system rankingowy ^3CSR^4. Graj, zdobywaj MM
 RANK_WELCOME_2 = ^3/top^4 by zobaczyc top30 obecnego sezonu. ^3/top 1^4 pokaze top10 sezonu #1 itd.
 RANK_WELCOME_3 = ^3/rank^4 pokazuje ciebie w tabeli. ^3/history^4 pokazuje twoja historie.
 HUD_PLACEMENT = [CSR] Sezon %d | Kalibracja %d/%d
-HUD_RANKED = [CSR] Sezon %d | %s | %d/%d MMR | Top %s
+HUD_RANKED = [CSR] Sezon %d | Mecz #%d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Bez rangi <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== ROZGRZEWKA ==-^n%d
@@ -48,7 +48,7 @@ RANK_WELCOME_1 = ^4Dieser Server verwendet das ^3CSR ^4Rangsystem. Spiele Matche
 RANK_WELCOME_2 = ^4Tippe ^3/top^4 um die Top30 der aktuellen Saison zu sehen. ^3/top 1^4 zeigt die Top10 von Saison 1 usw.
 RANK_WELCOME_3 = ^3/rank^4 zeigt Ihren Platz in der Rangliste an. ^3/history^4 zeigt Ihre Saisondaten an.
 HUD_PLACEMENT = [CSR] Saison %d | Platzierung %d/%d
-HUD_RANKED = [CSR] Saison %d | %s | %d/%d MMR | Top %s
+HUD_RANKED = [CSR] Saison %d | Spiel #%d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Unranked <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== AUFWÄRMEN ==-^n%d
@@ -67,7 +67,7 @@ RANK_WELCOME_1 = ^4Ce serveur utilise le système de classement ^3CSR ^4. Jouez 
 RANK_WELCOME_2 = ^4Tapez ^3/top^4 pour voir le top30 de la saison actuelle. ^3/top 1^4 affiche le top10 de la saison 1, etc.
 RANK_WELCOME_3 = ^3/rang^4 vous indique votre position dans le classement. ^3/history^4 affiche vos données saisonnières.
 HUD_PLACEMENT = [CSR] Saison %d | Placement %d/%d
-HUD_RANKED = [CSR] Saison %d | %s | %d/%d MMR | Top %s
+HUD_RANKED = [CSR] Saison %d | Jeu #%d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Non classé <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top : %d <<
 HUD_WARMUP = -== ÉCHAUFFEMENT ==-^n%d
@@ -86,7 +86,7 @@ RANK_WELCOME_1 = ^4Цей сервер використовує рейтинго
 RANK_WELCOME_2 = ^4Введіть ^3/top^4 щоб побачити топ30 поточного сезону. ^3/top 1^4 покаже топ10 сезону 1 тощо.
 RANK_WELCOME_3 = ^3/rank^4 показує вас у таблиці лідерів. ^3/history^4 показує ваші сезонні дані.
 HUD_PLACEMENT = [CSR] Сезон %d | Калібрування %d/%d
-HUD_RANKED = [CSR] Сезон %d | %s | %d/%d MMR | Топ %s
+HUD_RANKED = [CSR] Сезон %d | гра #%d | %s | %d/%d MMR | Топ %s
 HUD_WATCH_PLACEMENT = >> Без рангу <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Топ: %d <<
 HUD_WARMUP = -== РОЗМИНКА ==-^n%d
@@ -105,7 +105,7 @@ RANK_WELCOME_1 = ^4Этот сервер использует рейтингов
 RANK_WELCOME_2 = ^4Введите ^3/top^4 чтобы увидеть топ30 текущего сезона. ^3/top 1^4 покажет топ10 сезона 1 и т.д.
 RANK_WELCOME_3 = ^3/rank^4 показывает ваше место в таблице лидеров. ^3/history^4 показывает ваши сезонные данные.
 HUD_PLACEMENT = [CSR] Сезон %d | Калибровка %d/%d
-HUD_RANKED = [CSR] Сезон %d | %s | %d/%d MMR | Топ %s
+HUD_RANKED = [CSR] Сезон %d | игра #%d | %s | %d/%d MMR | Топ %s
 HUD_WATCH_PLACEMENT = >> Без ранга <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Топ: %d <<
 HUD_WARMUP = -== РАЗМИНКА ==-^n%d
@@ -124,7 +124,7 @@ RANK_WELCOME_1 = ^4Este servidor usa el sistema de ranking ^3CSR ^4. Juega parti
 RANK_WELCOME_2 = ^4Escribe ^3/top^4 para ver el top30 de la temporada actual. ^3/top 1^4 muestra el top10 de la temporada 1, etc.
 RANK_WELCOME_3 = ^3/rank^4 muestra tu posición en la tabla de clasificación. ^3/history^4 muestra tus datos de temporada.
 HUD_PLACEMENT = [CSR] Temporada %d | Colocación %d/%d
-HUD_RANKED = [CSR] Temporada %d | %s | %d/%d MMR | Top %s
+HUD_RANKED = [CSR] Temporada %d | Juego #%d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Sin rango <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== CALENTAMIENTO ==-^n%d
@@ -143,7 +143,7 @@ RANK_WELCOME_1 = ^4Tento server používá rankingový systém ^3CSR ^4. Hraj z�
 RANK_WELCOME_2 = ^4Napiš ^3/top^4 pro zobrazení top30 aktuální sezóny. ^3/top 1^4 zobrazí top10 sezóny 1 atd.
 RANK_WELCOME_3 = ^3/rank^4 ukazuje vaše umístění v žebříčku. ^3/history^4 zobrazuje vaše sezónní data.
 HUD_PLACEMENT = [CSR] Sezóna %d | Kalibrace %d/%d
-HUD_RANKED = [CSR] Sezóna %d | %s | %d/%d MMR | Top %s
+HUD_RANKED = [CSR] Sezóna %d | Hra #%d | %s | %d/%d MMR | Top %s
 HUD_WATCH_PLACEMENT = >> Bez ranku <<
 HUD_WATCH_RANKED = >> %s (%d MMR) | Top: %d <<
 HUD_WARMUP = -== ROZCVIČKA ==-^n%d
