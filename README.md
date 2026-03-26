@@ -30,25 +30,36 @@ _____________________
 _____________________
 #### HIDDEN SCORING SYSTEM
 
-+1 40 enemy damage dealt (capped at rank_dmg_cap per round to avoid exploits)   
-+1 Headshot / knife / grenade / pistol kill   
-+1 Bad-weapon kill (>=50 dmg to victim)  
-+1 Killstreak kills in one round (until ACE)  
-+1 Longshot kill  
-+2 Bomb plant  
-+3 Bomb Defuse  
-+1 Hostage rescued  
--1 Hostage killed  
-+1 Round won  
--1 Round lost  
--1 PvP death  
--2 Teamkill  
-+2 KD Ratio 2.0+  
-+1 KD Ratio > 1.0  
--2 KD Ratio < 1.0  
+1 dmg = 1 point  
++20 Headshot/knife/nade/pistol kill  
+20% bonus for dealing damage with bad weapon  
++10 Longshot kill  
++30 Bomb Plant  
++40 Bomb Defuse  
++15 Hostage rescued  
+-50 Hostage killed  
++25 Round win  
+-15 Round lost  
+-50 Death  
+-25 Teamkill  
+5*killstreak Killstreak bonus until ACE
   
-SPR Modifiers  
-__Presence__ 0-50% -1 | 50-65% -0.5 | 65-80% 0 | 80-90% +0.5 | 90-100% +1
+#### SPM Modifiers  
+They modify SPM at the end of the match  
+
+| PRESENCE % | SPM  |
+| ---------- | ---- |
+| <50%       | -20% |
+| 50-65%     | -10% |
+| 80-90%     | +10% |
+| 90-100%    | +20% |
+
+| KD RATIO   | SPM  |
+| ---------- | ---- |
+| <0.5       | -20% |
+| 0.5-1.0    | -10% |
+| 1.5-2.0    | +10% |
+| >2.0       | +20% |
 
 #### RANK TIERS
 Just like CS:GO, from Silver 1 to Global Elite (at 5000 MMR)
@@ -68,10 +79,9 @@ _____________________
 __rank_debug 0__ - Toggle additional logging  
 __rank_min_players 4__ - Minimum amount of human players to start ranked match  
 __rank_ideal_players 10__ - Ideal amount of players (human+bots) for max MMR gain/loss  
-__rank_min_rounds 5__ - Minimum amount of rounds a player need to play to be eligible for MMR change  
-__rank_score_cap 10__ - Maximum score a player can earn in a single round  
+__rank_min_minutes 5__ - Minimum amount of minutes a player need to play to be eligible for MMR change  
+__rank_score_cap 750__ - Maximum score a player can earn in a single round, doesn't work in round-less modes  
 __rank_match_win_bonus 0__ - Give team that won a match extra map score(useful for pro/scrims/pugs)  
-__rank_dmg_cap 550__ - Maximum damage that counts towards player score in a single round  
 __rank_warmup_time 45__ - Unranked warmup time in seconds  
 __rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)   
 __rank_karlib_port 8090__ - Open port to use for HTML Motd pages  
@@ -90,10 +100,10 @@ __amx_rank_newseason__ - Start a new ranked season
 __amx_rank_seasons__ - List all ranked seasons  
 _____________________
 #### PLAYER CHAT COMMANDS
-__!top__ or __/top__ - Open Top leaderboard for current season  
-__!top 1__ or __/top 1__ - Open Top10 leaderboard for season 1  
-__!rank__ or __/rank__ - Show You and players close to you in leaderboard  
-__!history__ or __/history__ - Show your seasonal rank history  
+__/top__ - Open Top leaderboard for current season  
+__/top 1__ - Open Top10 leaderboard for season 1  
+__/rank__ - Show You and players close to you in leaderboard  
+__/history__ - Show your seasonal rank history  
 _____________________
 #### DISCLAIMER
 To add MySQL/MariaDB support, I used Claude AI. You have been warned
