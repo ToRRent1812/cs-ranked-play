@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.3.0"
+#define VERSION    "1.3.1"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -54,16 +54,16 @@
 
 #define SCORE_KILL_BONUS        20      // Bonus for headshot/knife/nade kill
 #define BAD_WEAPON_MULTIPLIER   1.2     // Multiplier bonus for dealing damage with bad weapons
-#define SCORE_LONGSHOT          10      // Bonus for longshot kill
-#define SCORE_PLANT             30      // Bonus for bomb plant
-#define SCORE_DEFUSE            40      // Bonus for bomb defuse
-#define SCORE_HOSTAGE_RESCUE    15      // Bonus for rescuing a hostage
-#define SCORE_HOSTAGE_KILL      -50     // Penalty for killing a hostage
-#define SCORE_ROUND_WIN         25      // Bonus for winning a round
-#define SCORE_ROUND_LOST        -15     // Penalty for losing a round
+#define SCORE_LONGSHOT          20      // Bonus for longshot kill
+#define SCORE_PLANT             200     // Bonus for bomb plant
+#define SCORE_DEFUSE            300     // Bonus for bomb defuse
+#define SCORE_HOSTAGE_RESCUE    125     // Bonus for rescuing a hostage
+#define SCORE_HOSTAGE_KILL      -150    // Penalty for killing a hostage
+#define SCORE_ROUND_WIN         50      // Bonus for winning a round
+#define SCORE_ROUND_LOST        -35     // Penalty for losing a round
 #define SCORE_DEATH             -50     // Penalty for dying
-#define SCORE_TEAMKILL          -25     // Penalty for team killing
-#define SCORE_KILLSTREAK        5       // Base bonus for each kill in a killstreak (starting from 2 kills in a row)
+#define SCORE_TEAMKILL          -100    // Penalty for team killing
+#define SCORE_KILLSTREAK        10      // Base bonus for each kill in a killstreak (starting from 2 kills in a row)
 #define MAX_KILLSTREAK          5       // Maximum killstreak that grants bonus points
 
 #define _H(%1) add(szHTML, charsmax(szHTML), %1)
@@ -81,8 +81,8 @@
 new const LongshotDist[8] = { 800, 1200, 400, 2500, 3000, 0, 0, 0 }
 
 new const RankNamesShort[RANK_COUNT][] = {
-    "Silver 1","Silver 2","Silver 3","Silver 4","Silv. Elite","Silv. Mst.",
-    "Gold 1","Gold 2","Gold 3","Gold Mst.",
+    "Silver 1","Silver 2","Silver 3","Silver 4","Silv. Elite","Silver M",
+    "Gold 1","Gold 2","Gold 3","Gold M",
     "MG 1","MG 2","MGE","DMG",
     "LE","LEM","SUPREME","GLOBAL"
 }
@@ -170,7 +170,7 @@ public plugin_init()
     g_cvarDoubleGain = register_cvar("rank_double_gain","0",FCVAR_SERVER)                   // 1 = double MMR gain bonus event
     g_cvarWarmupTime = register_cvar("rank_warmup_time","45",FCVAR_SERVER)                  // Warmup time in seconds
     g_cvarKarPort = register_cvar("rank_karlib_port","8090",FCVAR_SERVER|FCVAR_PROTECTED)   // Port to use MOTD webpages
-    g_cvarDBType = register_cvar("rank_db_type","sqlite",FCVAR_SERVER)                      // Saving type: "sqlite" or "mariadb"
+    g_cvarDBType = register_cvar("rank_db_type","sqlite",FCVAR_SERVER|FCVAR_PROTECTED)      // Saving type: "sqlite" or "mariadb"
     g_cvarDBHost = register_cvar("rank_db_host","127.0.0.1",FCVAR_SERVER|FCVAR_PROTECTED)   // Mysql Database host
     g_cvarDBUser = register_cvar("rank_db_user","CSR",FCVAR_SERVER|FCVAR_PROTECTED)         // Mysql Database user
     g_cvarDBPass = register_cvar("rank_db_pass","",FCVAR_SERVER|FCVAR_PROTECTED)            // Mysql Database password
@@ -188,7 +188,7 @@ public plugin_init()
     register_logevent("Round_Restart",2,"1&Restart_Round_","1=Game_Commencing")
     register_event("30","OnMapEnd","a");
 
-    register_concmd("amx_rank_adjust","CmdRankAdjust",ADMIN_BAN, "<steamid> <mmr>")
+    // register_concmd("amx_rank_adjust","CmdRankAdjust",ADMIN_BAN, "<steamid> <mmr>")
     register_concmd("amx_rank_recalc","CmdRankRecalc",ADMIN_BAN, "Force map-end calculation")
     register_concmd("amx_rank_cancel","CmdRankCancel",ADMIN_BAN, "Cancel current match")
     register_concmd("amx_rank_status","CmdRankStatus",ADMIN_BAN, "Show match state and scores")
@@ -1505,7 +1505,6 @@ public OnRoundEnd(status, event, Float:tmDelay)
 
     for (new id = 1; id <= 32; id++)
     {
-        if (g_iMatchScore[id] < 0) g_iMatchScore[id] = 0
         if (g_iRoundScoreEarned[id] <= 0) continue
 
         if (status != 0 && g_iMatchState == STATE_LIVE)
@@ -1548,6 +1547,7 @@ public AddScore(id, iAmount)
     }
 
     g_iMatchScore[id] += iAmount
+    if (g_iMatchScore[id] < 0) g_iMatchScore[id] = 0
 }
 
 // DAMAGE & KILLS
@@ -1606,6 +1606,9 @@ public OnPlayerKilled(victim, killer, shouldgib)
     g_iKillStreak[killer]++
     if (g_iKillStreak[killer] >= 2 && g_iKillStreak[killer] <= MAX_KILLSTREAK)
         AddScore(killer, SCORE_KILLSTREAK*g_iKillStreak[killer])
+    else if(g_iKillStreak[killer] > MAX_KILLSTREAK)
+        AddScore(killer, SCORE_KILLSTREAK*MAX_KILLSTREAK)
+
 
     if (LongshotDist[iWpnClass] > 0)
     {
