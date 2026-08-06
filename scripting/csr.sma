@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.3.1"
+#define VERSION    "1.3.2"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -664,7 +664,8 @@ DB_LoadPlayer(id)
         if (g_hSQL == Empty_Handle) return
     }
 
-    get_user_name(id, g_szName[id], charsmax(g_szName[]))
+    if (is_user_connected(id))
+        get_user_name(id, g_szName[id], charsmax(g_szName[]))
 
     new szQuery[256]
     formatex(szQuery, charsmax(szQuery),
