@@ -33,16 +33,16 @@ _____________________
 1 dmg = 1 point  
 +20 Headshot/knife/nade/pistol kill  
 20% bonus for dealing damage with bad weapon  
-+10 Longshot kill  
-+30 Bomb Plant  
-+40 Bomb Defuse  
-+15 Hostage rescued  
--50 Hostage killed  
-+25 Round win  
--15 Round lost  
++20 Longshot kill  
++200 Bomb Plant  
++300 Bomb Defuse  
++125 Hostage rescued  
+-150 Hostage killed  
++50 Round win  
+-35 Round lost  
 -50 Death  
--25 Teamkill  
-5*killstreak Killstreak bonus until ACE
+-100 Teamkill  
+10*killstreak Killstreak bonus until ACE
   
 #### SPM Modifiers  
 They modify SPM at the end of the match  
