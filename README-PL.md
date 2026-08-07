@@ -33,16 +33,16 @@ _____________________
 1 pkt obrażeń = 1 punkt  
 +20 Headshot/noż/granat/pistoletowe zabójstwo  
 20% bonus za zadanie obrażeń ze słabej broni  
-+10 zabójstwo z dystansu  
-+30 Podłożenie bomby  
-+40 Rozbrojenie bomby  
-+15 Uratowanie zakładnika  
--50 Zabójstwo zakładnika  
-+25 Wygranie rundy  
--15 Przegranie rundy  
++20 zabójstwo z dystansu  
++200 Podłożenie bomby  
++300 Rozbrojenie bomby  
++125 Uratowanie zakładnika  
+-150 Zabójstwo zakładnika  
++50 Wygranie rundy  
+-35 Przegranie rundy  
 -50 Śmierć  
--25 Zabójstwo sojusznika  
-5*seria Bonus za wielokrotne zabójstwa aż do EJSA
+-100 Zabójstwo sojusznika  
+10*seria Bonus za wielokrotne zabójstwa aż do EJSA
   
 #### Modyfikatory WNM 
 Te zmienne modifykują WNM na końcu meczu 
