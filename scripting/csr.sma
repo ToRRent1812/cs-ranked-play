@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.3.2"
+#define VERSION    "1.3.3"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -1718,12 +1718,21 @@ ApplyMatchWinBonus()
     }
 }
 
-BuildQualifierList(iOut[], bool:bIsParticipant[], Float:fAvgScore[], Float:fParticipation[], iMinMinutes)
+BuildQualifierList(iMatch[], bool:bIsParticipant[], Float:fAvgScore[], Float:fParticipation[], iMinMinutes, bool:bForcedScore)
 {
     new iQualNum = 0
     for (new id = 1; id <= 32+MAX_DCSLOTS; id++)
     {
         if (!bIsParticipant[id] || g_iTotalMinutes - g_iMinuteJoined[id] < iMinMinutes || g_iMinuteJoined[id] <= 0 || g_iTotalMinutes <= 0) continue
+
+        if (bForcedScore)
+        {
+            fAvgScore[id] = float(g_iMatchScore[id])
+            fParticipation[id] = 1.0
+            if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual(forced): %s Score=%d", g_szSteamID[id], g_iMatchScore[id])
+            iMatch[iQualNum++] = id
+            continue
+        }
 
         new iInMatch = clamp(g_iTotalMinutes - g_iMinuteJoined[id], 1, g_iTotalMinutes)
         fParticipation[id] = floatclamp(float(iInMatch) / float(g_iTotalMinutes), 0.0, 1.0)
@@ -1751,7 +1760,7 @@ BuildQualifierList(iOut[], bool:bIsParticipant[], Float:fAvgScore[], Float:fPart
 
         if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] %s Presence=%.0f%% KDRatio=%.2f SPMupdate=%.2f", g_szSteamID[id], fParticipation[id] * 100.0, fKDRatio, fAvgScore[id])
 
-        iOut[iQualNum++] = id
+        iMatch[iQualNum++] = id
     }
     return iQualNum
 }
@@ -1954,10 +1963,11 @@ public Task_MapEnd()
     new Float:fAvgScore[33+MAX_DCSLOTS]
     new Float:fParticipation[33+MAX_DCSLOTS]
     new iQualPlayers[33+MAX_DCSLOTS]
+    new bool:bForcedScore = g_forcedwin_calc
     new iMinMinutes = g_forcedwin_calc ? 1 : get_pcvar_num(g_cvarMinMinutes)
     g_forcedwin_calc = false
 
-    new iQualNum = BuildQualifierList(iQualPlayers, bIsParticipant, fAvgScore, fParticipation, iMinMinutes)
+    new iQualNum = BuildQualifierList(iQualPlayers, bIsParticipant, fAvgScore, fParticipation, iMinMinutes, bForcedScore)
 
     new iMinPlayers = get_pcvar_num(g_cvarMinPlayers)
     if (iQualNum < iMinPlayers || iQualNum <= 1)
