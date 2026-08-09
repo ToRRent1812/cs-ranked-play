@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.3.3"
+#define VERSION    "1.3.4"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -709,12 +709,23 @@ EscapeSQL(const szIn[], szOut[], iOutLen)
     szOut[j] = EOS
 }
 
+GetPlayerName(id, szOut[], iOutLen)
+{
+    if (g_szName[id][0] != EOS)
+        copy(szOut, iOutLen, g_szName[id])
+    else
+        copy(szOut, iOutLen, g_szSteamID[id])
+}
+
 DB_UpdateNickname(id)
 {
     if (g_hSQL == Empty_Handle || g_szSteamID[id][0] == EOS) return
 
+    new szPlayerName[32]
+    GetPlayerName(id, szPlayerName, charsmax(szPlayerName))
+
     new szSafe[129]
-    EscapeSQL(g_szName[id], szSafe, charsmax(szSafe))
+    EscapeSQL(szPlayerName, szSafe, charsmax(szSafe))
 
     new szQuery[256]
     formatex(szQuery, charsmax(szQuery),
@@ -737,8 +748,11 @@ DB_QueueSavePlayer(id)
     if (is_user_connected(id))
         get_user_name(id, g_szName[id], charsmax(g_szName[]))
 
+    new szPlayerName[32]
+    GetPlayerName(id, szPlayerName, charsmax(szPlayerName))
+
     new szSafeName[129]
-    EscapeSQL(g_szName[id], szSafeName, charsmax(szSafeName))
+    EscapeSQL(szPlayerName, szSafeName, charsmax(szSafeName))
 
     new szQuery[640]
     if (g_bInDB[id])
@@ -813,6 +827,10 @@ public client_disconnected(id)
 {
     remove_task(TASK_HUD_BASE + id)
     g_iGlobalPos[id] = -1
+
+    if (g_szSteamID[id][0] != EOS && g_szName[id][0] != EOS)
+        DB_UpdateNickname(id)
+
     if (g_iMinuteJoined[id] > 0 && g_iTotalMinutes - g_iMinuteJoined[id] >= get_pcvar_num(g_cvarMinMinutes))
     {
         g_DisconnectCounter++
@@ -1109,7 +1127,7 @@ BuildSeasonHTML(iSeason, szOut[], iOutLen, iLimit = 10)
                 default: formatex(szPos, charsmax(szPos), "<td class='p'>%d</td>", iRow)
             }
 
-            formatex(szRows[iTotal], charsmax(szRows[]), "<tr>%s<td>%s</td><td>%s</td><td class='m'>%d</td></tr>",
+            formatex(szRows[iTotal], charsmax(szRows[]), "<tr>%s<td>%s</td><td>%d</td><td class='m'>%d</td></tr>",
                 szPos, szDisplay, iMaps, RankNamesShort[GetPlayerRank(iPoints)], iPoints)
 
             bHasRows = true
@@ -1126,33 +1144,33 @@ BuildSeasonHTML(iSeason, szOut[], iOutLen, iLimit = 10)
     static szHTML[16384]
     szHTML[0] = EOS
 
-    add(szHTML, charsmax(szHTML), "<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.w{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
-    formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><div class='w'>", szLabel)
+    add(szHTML, charsmax(szHTML), "<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.col{vertical-align:top;padding:0 4px;border:none}table.outer{width:100%;table-layout:fixed;border-collapse:collapse;padding:4px}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
+    formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><table class='outer'><tr>", szLabel)
     add(szHTML, charsmax(szHTML), szTmp)
 
     if (!bHasRows)
     {
-        add(szHTML, charsmax(szHTML), "<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        add(szHTML, charsmax(szHTML), "<td class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
         add(szHTML, charsmax(szHTML), "<tr><td colspan='5' class='nil'>No data...</td></tr>")
-        add(szHTML, charsmax(szHTML), "</tbody></table></div>")
+        add(szHTML, charsmax(szHTML), "</tbody></table></td>")
     }
     else
     {
-        add(szHTML, charsmax(szHTML), "<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        add(szHTML, charsmax(szHTML), "<td class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
         for (new r = 0; r < 15 && r < iTotal; r++)
             add(szHTML, charsmax(szHTML), szRows[r])
-        add(szHTML, charsmax(szHTML), "</tbody></table></div>")
+        add(szHTML, charsmax(szHTML), "</tbody></table></td>")
 
         if (iTotal > 15)
         {
-            add(szHTML, charsmax(szHTML), "<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+            add(szHTML, charsmax(szHTML), "<td class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
             for (new r = 15; r < iTotal; r++)
                 add(szHTML, charsmax(szHTML), szRows[r])
-            add(szHTML, charsmax(szHTML), "</tbody></table></div>")
+            add(szHTML, charsmax(szHTML), "</tbody></table></td>")
         }
     }
 
-    add(szHTML, charsmax(szHTML), "</div>")
+    add(szHTML, charsmax(szHTML), "</tr></table>")
     copy(szOut, iOutLen, szHTML)
 }
 
@@ -1171,8 +1189,8 @@ BuildTopHTML()
     new szLabel[128]
     FormatSeasonHeader(g_iCurrentSeason, szLabel, charsmax(szLabel))
 
-    _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.w{display:flex;gap:4px;padding:4px}.col{flex:1;min-width:0}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
-    formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><div class='w'>", szLabel)
+    _H("<style>*{margin:0;padding:0}body{background:#111;color:#ccc;font:12px Arial}.col{vertical-align:top;padding:0 4px;border:none}table.outer{width:100%;table-layout:fixed;border-collapse:collapse;padding:4px}table{width:100%;border-collapse:collapse}th{background:#181818;color:#f4a800;padding:3px 5px;text-align:left;font-size:11px;border-bottom:1px solid #333}td{padding:3px 5px;border-bottom:1px solid #181818}.p{width:18px;text-align:center;font-weight:bold}.g{color:#FFD700}.s{color:#C0C0C0}.b{color:#CD7F32}.m{color:#f4a800;font-weight:bold}.nil{color:#555;text-align:center;padding:10px;font-style:italic}.hd{background:#181818;color:#f4a800;padding:4px 8px;font:bold 12px Arial;border-bottom:2px solid #333}</style>")
+    formatex(szTmp, charsmax(szTmp), "<div class='hd'>%s</div><table class='outer'><tr>", szLabel)
     _H(szTmp)
 
     new szQ[256]
@@ -1221,27 +1239,27 @@ BuildTopHTML()
 
     if (!bHasRows)
     {
-        _H("<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        _H("<td class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
         _H("<tr><td colspan='5' class='nil'>Waiting for data...</td></tr>")
-        _H("</tbody></table></div>")
+        _H("</tbody></table></td>")
     }
     else
     {
-        _H("<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+        _H("<td class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
         for (new r = 0; r < 15 && r < iTotal; r++)
             _H(szRows[r])
-        _H("</tbody></table></div>")
+        _H("</tbody></table></td>")
 
         if (iTotal > 15)
         {
-            _H("<div class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
+            _H("<td class='col'><table><thead><tr><th class='p'>#</th><th>Nick</th><th>Games</th><th>Rank</th><th>MMR</th></tr></thead><tbody>")
             for (new r = 15; r < iTotal; r++)
                 _H(szRows[r])
-            _H("</tbody></table></div>")
+            _H("</tbody></table></td>")
         }
     }
 
-    _H("</div>")
+    _H("</tr></table>")
 
     copy(g_szTopHTML, charsmax(g_szTopHTML), szHTML)
 }
@@ -1460,6 +1478,25 @@ public OnNewRound()
         g_iRoundScoreEarned[id] = 0
 
         if(is_user_connected(id) && is_user_alive(id) && g_iMinuteJoined[id] <= 0) g_iMinuteJoined[id] = g_iTotalMinutes
+    }
+
+    RefreshPlayerNames()
+}
+
+RefreshPlayerNames()
+{
+    new szName[32]
+
+    for (new id = 1; id <= 32; id++)
+    {
+        if (!is_user_connected(id) || is_user_bot(id)) continue
+
+        get_user_name(id, szName, charsmax(szName))
+        if (szName[0] != EOS && (!g_szName[id][0] || !equal(szName, g_szName[id])))
+        {
+            copy(g_szName[id], charsmax(g_szName[]), szName)
+            DB_UpdateNickname(id)
+        }
     }
 }
 
