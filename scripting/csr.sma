@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.4.0"
+#define VERSION    "1.4.1"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -46,8 +46,8 @@
 #define TASK_COUNT_MINUTES      9906
 
 #define MAX_DCSLOTS             32
-#define PLACEMENT_MAPS          5
-#define START_POINTS            400
+#define PLACEMENT_MAPS          8
+#define START_POINTS            500
 #define RANK_COUNT              18
 #define MMR_CAP                 9999
 #define MMR_MAX_GAIN            125
