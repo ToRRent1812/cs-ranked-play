@@ -17,7 +17,7 @@ a później porównywani między sobą by obliczyć, ile MMR gracz otrzyma/strac
 __Ocena obecności__ - Im więcej rund zagrasz, tym więcej punktów MMR dostaniesz/stracisz  
 __Anty-smurfing__ - Gracze nie mogą spaść z MMR bardziej niż 50% swojego najlepszego rezultatu  
 __Tarcza__ - Gracz traci mniej MMR na niższych rangach, mniej irytujące dla każuali  
-__Gry kwalifikacyjne__ - Gracz musi rozegrać 5 meczy by otrzymać rangę  
+__Gry kwalifikacyjne__ - Gracz musi rozegrać 8 meczy by otrzymać rangę  
 __Sezony__ - Każdy sezon ma niezależny ranking  
 __Anty ragequit__ - Jeżeli gracz wyjdzie z serwera, jego statystyki zostaną zapisane dopóki nie zmieni się mapa, lub dopóki nie wróci na serwer
 Dane z poprzednich sezonów są zachowane w bazie danych. Admini serwera mogą uruchomić nowy sezon rankingowy w dowolnym dniu wpisując komendę.
