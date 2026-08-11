@@ -17,7 +17,7 @@ and then compared to each other to determine MMR gain/lose
 __Participation scaling__ - The more rounds player played, the bigger percentage of final MMR gain/lose he will get  
 __Anti-smurf__ - Player cannot drop down below 1/2 of their highest MMR in the current season  
 __Shield__ - Player loses less MMR on lower ranks, less frustrating for casual players  
-__Placement games__ - player receives first rank after 5 placement matches  
+__Placement games__ - player receives first rank after 8 placement matches  
 __Seasons__ - Each season is an independent leaderboard  
 __Ragequit protection__ - If player disconnects, his data will be saved until map change or reconnect  
 Previous season data is preserved in database. Server admins launch new ranked season using admin command.
