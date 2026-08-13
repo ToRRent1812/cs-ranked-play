@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.4.1"
+#define VERSION    "1.4.2"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -237,7 +237,7 @@ ValidateCvars()
     if (get_pcvar_num(g_cvarIdealPlayers) < 1)   set_pcvar_num(g_cvarIdealPlayers, 1)
     if (get_pcvar_num(g_cvarMinMinutes)   < 1)   set_pcvar_num(g_cvarMinMinutes, 1)
     if (get_pcvar_num(g_cvarLongmatch)    < get_pcvar_num(g_cvarMinMinutes))   set_pcvar_num(g_cvarLongmatch, get_pcvar_num(g_cvarMinMinutes))
-    if (get_pcvar_num(g_cvarScoreCap)     < 0)   set_pcvar_num(g_cvarScoreCap, 0)
+    if (get_pcvar_num(g_cvarScoreCap)     < 0)   set_pcvar_num(g_cvarScoreCap, 1000000)
     if (get_pcvar_num(g_cvarMatchwin)     < 0)   set_pcvar_num(g_cvarMatchwin, 0)
     if (get_pcvar_num(g_cvarDoubleGain)   < 0)   set_pcvar_num(g_cvarDoubleGain, 0)
     if (get_pcvar_num(g_cvarLongmatch)    < 1)   set_pcvar_num(g_cvarLongmatch, 1)
@@ -1919,10 +1919,13 @@ CalcMMR(iPlayers[], iNum, iOutcome[], Float:fParticipation[], iNewPoints[])
         new bool:bPlace = (g_iMapsPlayed[id] < PLACEMENT_MAPS)
 
         new Float:fTotal = 0.0
+        new iBeaten = 0
         for (new j = 0; j < iNum; j++)
         {
             new opp = iPlayers[j]
             if (opp == id || iOutcome[id] == iOutcome[opp]) continue
+
+            if (iOutcome[opp] > iOutcome[id]) iBeaten++
 
             new iOppRank  = GetPlayerRank(g_iPoints[opp])
             new iRankDiff = abs(iMyRank - iOppRank)
@@ -1952,6 +1955,7 @@ CalcMMR(iPlayers[], iNum, iOutcome[], Float:fParticipation[], iNewPoints[])
             new iShield = (iMyRank < RANK_COUNT) ? ShieldLossPct[iMyRank] : 100
             iChange = (iChange * iShield) / 100
         }
+        if (iNum > iIdealPlayers) iChange += iBeaten
         new iDouble
         if(bPlace) iDouble = 2
         else iDouble = 1
