@@ -85,6 +85,8 @@ __rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(
 __rank_warmup_time 45__ - Czas rozgrzewki  
 __rank_double_gain 0__ - Włącza podwójny zarobek MMR(użyteczne na happy hours/2xp weekendy)  
 __rank_karlib_port 8090__ - Port który serwer musi mieć otwarty, by wyświetlać wyniki  
+__rank_motd_host__ - Pozwala podmienić adres IP jeżeli strony HTML nie wyświetlają się  
+__rank_longmatch_minutes 45__ - Ile minut gracz musi spędzić w meczu by otrzymać bonus 20% do MMR w zamian za poświęcenie w długiej grze  
 __rank_db_type sqlite__ - Metoda zapisu danych: "sqlite" lub "mariadb"  
 __rank_db_host localhost__ - MariaDB host  
 __rank_db_user CSR__ - MariaDB użytkownik  
