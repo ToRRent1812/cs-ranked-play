@@ -85,8 +85,8 @@ __rank_match_win_bonus 0__ - Give team that won a match extra map score(useful f
 __rank_warmup_time 45__ - Unranked warmup time in seconds  
 __rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)   
 __rank_karlib_port 8090__ - Open port to use for HTML Motd pages  
-__rank_motd_host__ - Overrides default IP adress if somehow HTML motd pages are blank
-__rank_longmatch_minutes 45__ - How many minutes a player need to spend in a match, to receive 20% MMR bonus for long commitment
+__rank_motd_host__ - Overrides default IP adress if somehow HTML motd pages are blank  
+__rank_longmatch_minutes 45__ - How many minutes a player need to spend in a match, to receive 20% MMR bonus for long commitment  
 __rank_db_type sqlite__ - Saving type: "sqlite" or "mariadb"  
 __rank_db_host localhost__ - MariaDB database host  
 __rank_db_user CSR__ - MariaDB user  
