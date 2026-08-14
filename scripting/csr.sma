@@ -145,6 +145,7 @@ new g_cvarLongmatch
 new g_cvarKarPort
 new g_cvarMotdHost
 new g_cvarMatchwin
+new g_cvarManualScoring
 new g_old_timelimit
 new bool:g_bWelcome[33+MAX_DCSLOTS] = false
 new g_szResultsHTML[16384]
@@ -171,6 +172,7 @@ public plugin_init()
     g_cvarMinMinutes = register_cvar("rank_min_minutes","5", FCVAR_SERVER)                  // Minimum amount of minutes a player need to play to be eligible for MMR change
     g_cvarScoreCap = register_cvar("rank_score_cap","1000",FCVAR_SERVER)                    // Maximum score a player can earn in a single round
     g_cvarMatchwin = register_cvar("rank_match_win_bonus","0",FCVAR_SERVER)                 // How much score player should earn for winning a match (useful on scrim/pug/pro server)
+    g_cvarManualScoring = register_cvar("rank_manual_scoring","0",FCVAR_SERVER)             // 1 = disable automatic match score from events, rely on external plugins using csr natives
     g_cvarDoubleGain = register_cvar("rank_double_gain","0",FCVAR_SERVER)                   // 1 = double MMR gain bonus event
     g_cvarLongmatch = register_cvar("rank_longmatch_minutes","45",FCVAR_SERVER)             // Minutes a player must spend in a match to get 25% MMR bonus for playing long match
     g_cvarWarmupTime = register_cvar("rank_warmup_time","45",FCVAR_SERVER)                  // Warmup time in seconds
@@ -1635,6 +1637,12 @@ public OnRoundEnd(status, event, Float:tmDelay)
 
 public AddScore(id, iAmount)
 {
+    if (get_pcvar_num(g_cvarManualScoring)) return
+    AddScoreInternal(id, iAmount)
+}
+
+AddScoreInternal(id, iAmount)
+{
     if (g_iMatchState != STATE_LIVE) return
     if (id < 1 || id > 32+MAX_DCSLOTS) return
 
@@ -1834,6 +1842,7 @@ public OnMapEnd()
 ApplyMatchWinBonus()
 {
     if (g_forcedwin_calc) return
+    if (get_pcvar_num(g_cvarManualScoring)) return
     new iBonus = get_pcvar_num(g_cvarMatchwin)
     if (iBonus <= 0) return
     new iWinningTeam = 0
@@ -2336,7 +2345,7 @@ public _native_add_score(plugin, params)
 {
     new id = get_param(1)
     if (id < 1 || id > 32+MAX_DCSLOTS) return 0
-    AddScore(id, get_param(2))
+    AddScoreInternal(id, get_param(2))
     return 1
 }
 

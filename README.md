@@ -81,7 +81,8 @@ __rank_min_players 4__ - Minimum amount of human players to start ranked match
 __rank_ideal_players 10__ - Ideal amount of players (human+bots) for max MMR gain/loss  
 __rank_min_minutes 5__ - Minimum amount of minutes a player need to play to be eligible for MMR change  
 __rank_score_cap 750__ - Maximum score a player can earn in a single round, doesn't work in round-less modes  
-__rank_match_win_bonus 0__ - Give team that won a match extra map score(useful for pro/scrims/pugs)  
+__rank_match_win_bonus 0__ - Give team that won a match extra map score(useful for pro/scrims/pugs)
+__rank_manual_scoring 0__ - Disable automatic match score from events, rely on external plugins using csr natives (csr_add_score/csr_set_score) to set scores  
 __rank_warmup_time 45__ - Unranked warmup time in seconds  
 __rank_double_gain 0__ - Enables 2x MMR gain on server(useful for happy hours/2xp weekends events)   
 __rank_karlib_port 8090__ - Open port to use for HTML Motd pages  
