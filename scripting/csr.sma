@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.4.2"
+#define VERSION    "1.4.3"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -1856,9 +1856,12 @@ BuildQualifierList(iMatch[], bool:bIsParticipant[], Float:fAvgScore[], Float:fPa
 
         if (bForcedScore)
         {
-            fAvgScore[id] = float(g_iMatchScore[id])
-            fParticipation[id] = 1.0
-            if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual(forced): %s Score=%d", g_szSteamID[id], g_iMatchScore[id])
+            new iValidScore = (id > MaxClients) ? 0 : g_iMatchScore[id]
+
+            new iInMatch = clamp(g_iTotalMinutes - g_iMinuteJoined[id], 1, g_iTotalMinutes)
+            fParticipation[id] = floatclamp(float(iInMatch) / float(g_iTotalMinutes), 0.0, 1.0)
+            fAvgScore[id] = float(iValidScore) / float(iInMatch)
+            if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual(forced): %s Score=%d SPM=%.2f", g_szSteamID[id], iValidScore, fAvgScore[id])
             iMatch[iQualNum++] = id
             continue
         }
