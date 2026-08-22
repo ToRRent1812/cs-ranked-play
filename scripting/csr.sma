@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.4.3"
+#define VERSION    "1.4.5"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -1687,6 +1687,7 @@ GetEffectiveScoreCap()
 public OnTakeDamage(victim, inflictor, attacker, Float:fDamage, damagetype)
 {
     if (g_iMatchState != STATE_LIVE) return HC_CONTINUE
+    if (get_pcvar_num(g_cvarManualScoring)) return HC_CONTINUE
     if (attacker < 1 || attacker > 32) return HC_CONTINUE
     if (attacker == victim) return HC_CONTINUE
     if (g_iPlayerTeam[attacker] == g_iPlayerTeam[victim]) return HC_CONTINUE
@@ -1708,6 +1709,8 @@ public OnTakeDamage(victim, inflictor, attacker, Float:fDamage, damagetype)
 
 public OnPlayerKilled(victim, killer, shouldgib)
 {
+    if (get_pcvar_num(g_cvarManualScoring)) return HC_CONTINUE
+
     new bool:bPvP = (killer > 0 && killer < 33 && killer != victim)
     if (bPvP) AddScore(victim, SCORE_DEATH)
     g_iMapDeaths[victim]++
@@ -1863,20 +1866,26 @@ BuildQualifierList(iMatch[], bool:bIsParticipant[], Float:fAvgScore[], Float:fPa
     {
         if (!bIsParticipant[id] || g_iTotalMinutes - g_iMinuteJoined[id] < iMinMinutes || g_iMinuteJoined[id] <= 0 || g_iTotalMinutes <= 0) continue
 
+        new iInMatch = clamp(g_iTotalMinutes - g_iMinuteJoined[id], 1, g_iTotalMinutes)
+        fParticipation[id] = floatclamp(float(iInMatch) / float(g_iTotalMinutes), 0.0, 1.0)
+
+        if (get_pcvar_num(g_cvarManualScoring))
+        {
+            fAvgScore[id] = float(g_iMatchScore[id])
+            if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual(manual): %s Score=%d", g_szSteamID[id], g_iMatchScore[id])
+            iMatch[iQualNum++] = id
+            continue
+        }
+
         if (bForcedScore)
         {
             new iValidScore = (id > MaxClients) ? 0 : g_iMatchScore[id]
 
-            new iInMatch = clamp(g_iTotalMinutes - g_iMinuteJoined[id], 1, g_iTotalMinutes)
-            fParticipation[id] = floatclamp(float(iInMatch) / float(g_iTotalMinutes), 0.0, 1.0)
             fAvgScore[id] = float(iValidScore) / float(iInMatch)
             if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual(forced): %s Score=%d SPM=%.2f", g_szSteamID[id], iValidScore, fAvgScore[id])
             iMatch[iQualNum++] = id
             continue
         }
-
-        new iInMatch = clamp(g_iTotalMinutes - g_iMinuteJoined[id], 1, g_iTotalMinutes)
-        fParticipation[id] = floatclamp(float(iInMatch) / float(g_iTotalMinutes), 0.0, 1.0)
 
         fAvgScore[id] = float(g_iMatchScore[id]) / float(iInMatch)
         if (get_pcvar_num(g_cvarDebug)) log_amx("[CSR] Qual: %s Minutes=%d Score=%d SPM=%.2f", g_szSteamID[id], iInMatch, g_iMatchScore[id], fAvgScore[id])
