@@ -62,7 +62,7 @@ They modify SPM at the end of the match
 | >2.0       | +20% |
 
 #### RANK TIERS
-Just like CS:GO, from Silver 1 to Global Elite (at 5000 MMR)
+Just like CS:GO, from Silver 1 to Global Elite (at 3000 MMR)
 _____________________
 #### ADVICE
 You can use this plugin on both public and private/pub/scrim servers BUT for public servers, make sure You are using:
