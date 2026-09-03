@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.4.5"
+#define VERSION    "1.4.6"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -44,6 +44,7 @@
 #define TASK_STARTING           9904
 #define TASK_SHOW_MOTD          9905
 #define TASK_COUNT_MINUTES      9906
+#define TASK_RANK_CHAT          9907
 
 #define MAX_DCSLOTS             32
 #define PLACEMENT_MAPS          8
@@ -82,10 +83,10 @@
 new const LongshotDist[8] = { 800, 1200, 400, 2500, 3000, 0, 0, 0 }
 
 new const RankNamesShort[RANK_COUNT][] = {
-    "Silver 1","Silver 2","Silver 3","Silver 4","Silv. Elite","Silv. Mst.",
-    "Gold 1","Gold 2","Gold 3","Gold Mst.",
-    "MG 1","MG 2","MGE","DMG",
-    "LE","LEM","SUPREME","GLOBAL"
+    "Silver I","Silver II","Silver III","Silver IV","Silver Elite","Silver Master",
+    "Gold I","Gold II","Gold III","Gold Master",
+    "Guardian I","Guardian II","MGE","DMG",
+    "LE","LEM","SUPREME","GLOBAL ELITE"
 }
 
 new const RankThresholds[RANK_COUNT + 1] = {
@@ -206,7 +207,6 @@ public plugin_init()
     register_clcmd("say","CmdSay")
     register_clcmd("say_team","CmdSay")
 
-    register_event("StatusText", "HUD_ShowSelf", "b")
     register_event("StatusValue", "setTeam", "bef", "1=1")
     register_event("StatusValue", "showStatus", "bef", "1=2", "2!0")
     register_event("StatusValue", "hideStatus", "bef", "1=1", "2=0")
@@ -897,6 +897,7 @@ public client_authorized(id)
     CheckPlayerCount()
 
     set_task(3.0, "Task_InitHUD", id)
+    set_task(30.0, "Task_RankChat", TASK_RANK_CHAT + id)
 }
 
 public client_disconnected(id)
@@ -997,36 +998,34 @@ public showStatus(id)
     }
 }
 
-public HUD_ShowSelf(id)
+public Task_RankChat(taskId)
 {
-    if (!is_user_connected(id) || is_user_bot(id) || !is_user_alive(id) || g_iMatchState != STATE_LIVE) return
-    new szLine[128]
+    new id = taskId - TASK_RANK_CHAT
+    if (!is_user_connected(id) || is_user_bot(id)) return
+    ShowRankChat(id)
+}
 
+ShowRankChat(id)
+{
     if (g_iMapsPlayed[id] < PLACEMENT_MAPS)
     {
-        formatex(szLine, charsmax(szLine), "%L", id, "HUD_PLACEMENT", g_iCurrentSeason, g_iMapsPlayed[id], PLACEMENT_MAPS)
+        client_print_color(id, print_team_default, "%l", LANG_PLAYER, "CHAT_PLACEMENT", g_iCurrentSeason, g_iMapsPlayed[id], PLACEMENT_MAPS)
+        return
     }
+
+    new iRank = GetPlayerRank(g_iPoints[id])
+    new iNextMMR = (iRank < RANK_COUNT - 1) ? RankThresholds[iRank + 1] : MMR_CAP
+
+    new szPos[12]
+    new iPos = g_iGlobalPos[id]
+    if (iPos <= 0)
+        copy(szPos, charsmax(szPos), "?")
+    else if (iPos < 1000)
+        formatex(szPos, charsmax(szPos), "#%d", iPos)
     else
-    {
-        new iRank = GetPlayerRank(g_iPoints[id])
-        new iNextMMR = (iRank < RANK_COUNT - 1) ? RankThresholds[iRank + 1] : MMR_CAP
+        formatex(szPos, charsmax(szPos), "%dk", iPos / 1000)
 
-        new szPos[12]
-        new iPos = g_iGlobalPos[id]
-        if (iPos <= 0)
-            copy(szPos, charsmax(szPos), "?")
-        else if (iPos < 1000)
-            formatex(szPos, charsmax(szPos), "#%d", iPos)
-        else
-            formatex(szPos, charsmax(szPos), "%dk", iPos / 1000)
-
-        formatex(szLine, charsmax(szLine), "%L", id, "HUD_RANKED", g_iCurrentSeason, g_iMapsPlayed[id], RankNamesShort[iRank], g_iPoints[id], iNextMMR, szPos)
-    }
-
-    message_begin(MSG_ONE, get_user_msgid("StatusText"), {0,0,0}, id)
-    write_byte(0)
-    write_string(szLine)
-    message_end()
+    client_print_color(id, print_team_default, "%l", LANG_PLAYER, "CHAT_RANKED", g_iCurrentSeason, g_iMapsPlayed[id], RankNamesShort[iRank], g_iPoints[id], iNextMMR, szPos)
 }
 
 // Chat command /top
@@ -1549,6 +1548,14 @@ public OnNewRound()
     }
 
     if (g_iMatchState != STATE_LIVE && g_iMatchState != STATE_PAUSED) return
+
+    new iRound = g_iTeamRounds[1] + g_iTeamRounds[2] + 1
+    if (iRound == 1 || iRound % 10 == 0)
+    {
+        for (new id = 1; id <= 32; id++)
+            if (is_user_connected(id) && !is_user_bot(id))
+                ShowRankChat(id)
+    }
 
     for (new id = 1; id <= 32; id++)
     {
