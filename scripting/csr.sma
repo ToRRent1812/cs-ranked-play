@@ -26,7 +26,7 @@
 #include <karlab>
 
 #define PLUGIN     "CSR - CS Ranked Play"
-#define VERSION    "1.4.6"
+#define VERSION    "1.4.7"
 #define AUTHOR     "ToRRent"
 
 #define STATE_WAITING           0       // Waiting for players
@@ -1009,7 +1009,7 @@ ShowRankChat(id)
 {
     if (g_iMapsPlayed[id] < PLACEMENT_MAPS)
     {
-        client_print_color(id, print_team_default, "%l", LANG_PLAYER, "CHAT_PLACEMENT", g_iCurrentSeason, g_iMapsPlayed[id], PLACEMENT_MAPS)
+        client_print_color(id, print_team_default, "%L", LANG_PLAYER, "CHAT_PLACEMENT", g_iCurrentSeason, g_iMapsPlayed[id], PLACEMENT_MAPS)
         return
     }
 
@@ -1025,7 +1025,7 @@ ShowRankChat(id)
     else
         formatex(szPos, charsmax(szPos), "%dk", iPos / 1000)
 
-    client_print_color(id, print_team_default, "%l", LANG_PLAYER, "CHAT_RANKED", g_iCurrentSeason, g_iMapsPlayed[id], RankNamesShort[iRank], g_iPoints[id], iNextMMR, szPos)
+    client_print_color(id, print_team_default, "%L", LANG_PLAYER, "CHAT_RANKED", g_iCurrentSeason, g_iMapsPlayed[id], RankNamesShort[iRank], g_iPoints[id], iNextMMR, szPos)
 }
 
 // Chat command /top
@@ -1370,7 +1370,7 @@ ShowTopMOTD(id, iReqSeason)
 
         if (!bExists)
         {
-            client_print_color(id, print_team_default, "%l", LANG_PLAYER, "RANK_WRONG_SEASON", iReqSeason)
+            client_print_color(id, print_team_default, "%L", LANG_PLAYER, "RANK_WRONG_SEASON", iReqSeason)
             return
         }
 
