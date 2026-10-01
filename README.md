@@ -23,9 +23,11 @@ __Ragequit protection__ - If player disconnects, his data will be saved until ma
 Previous season data is preserved in database. Server admins launch new ranked season using admin command.
 _____________________
 #### SCREENSHOTS
-<img width="1372" height="1006" alt="Zrzut ekranu_20260308_152535" src="https://github.com/user-attachments/assets/d1e6145d-b19d-4e43-ab4b-883a4b46ad66" />
-<img width="1360" height="1006" alt="Zrzut ekranu_20260308_153349" src="https://github.com/user-attachments/assets/ff5f466d-92d2-4eb2-be20-cfdd255753fe" />
-<img width="590" height="128" alt="Zrzut ekranu_20260308_200938" src="https://github.com/user-attachments/assets/4eec219e-45fd-4b4d-b0d8-1cecfff02cde" />
+<img width="1918" height="1080" alt="Zrzut ekranu_20261001_235736" src="https://github.com/user-attachments/assets/409e7bd8-9c86-498a-84d6-a69de72e9bae" />
+<img width="769" height="184" alt="Zrzut ekranu_20261001_235815" src="https://github.com/user-attachments/assets/7b9e6432-893a-431e-b71f-56249a8e205c" />
+<img width="769" height="303" alt="Zrzut ekranu_20261001_235827" src="https://github.com/user-attachments/assets/c0baf921-e8f5-4c3b-a792-fac7b5869e2d" />
+<img width="484" height="323" alt="Zrzut ekranu_20261001_235846" src="https://github.com/user-attachments/assets/184531f0-3a1c-400c-9164-ab1058f66b76" />
+
 
 _____________________
 #### HIDDEN SCORING SYSTEM
