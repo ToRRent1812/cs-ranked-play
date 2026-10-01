@@ -5,7 +5,7 @@ Kompetytywny system rankingowy dla CS 1.6 oraz Czero
 Zainspirowany matchmakingiem turniejowym w grach ala Valorant, CS2, R6: Siege czy Halo  
 _____________________
 #### DEMONSTRACJA
-Możesz zobaczyć plugin w użyciu na moich serwerach testowych  
+Możesz zobaczyć plugin w użyciu na moim serwerze gungame  
 1.6: ```connect 51.68.155.216:27015```  
 _____________________
 #### JAK TO DZIAŁA
@@ -19,7 +19,7 @@ __Anty-smurfing__ - Gracze nie mogą spaść z MMR bardziej niż 50% swojego naj
 __Tarcza__ - Gracz traci mniej MMR na niższych rangach, mniej irytujące dla każuali  
 __Gry kwalifikacyjne__ - Gracz musi rozegrać 8 meczy by otrzymać rangę  
 __Sezony__ - Każdy sezon ma niezależny ranking  
-__Anty ragequit__ - Jeżeli gracz wyjdzie z serwera, jego statystyki zostaną zapisane dopóki nie zmieni się mapa, lub dopóki nie wróci na serwer
+__Anty-ragequit__ - Jeżeli gracz wyjdzie z serwera, jego statystyki zostaną zapisane dopóki nie zmieni się mapa, lub dopóki nie wróci na serwer
 Dane z poprzednich sezonów są zachowane w bazie danych. Admini serwera mogą uruchomić nowy sezon rankingowy w dowolnym dniu wpisując komendę.
 _____________________
 #### SCREENY
@@ -63,7 +63,7 @@ Te zmienne modifykują WNM na końcu meczu
 | >2.0       | +20% |
 
 #### RANGI
-Takie same jak w CS:GO, Od Silver 1 do Global Elite (5000 MMR)
+Takie same jak w CS:GO, Od Silver 1 do Global Elite (3000 MMR)
 _____________________
 #### RADA
 Plugin można używać na serwerach publicznych i prywatnych ALE na serwerach publicznych, upewnij się że masz wgrany:
@@ -73,17 +73,17 @@ Plugin można używać na serwerach publicznych i prywatnych ALE na serwerach pu
 _____________________
 #### INSTALACJA
 Upewnij się że twój serwer ma __najnowszą wersję__ [ReHLDS z modułami](https://rehlds.dev/), [AMXX 1.10](https://www.amxmodx.org/downloads.php) oraz [Karlib](https://github.com/UnrealKaraulov/Unreal-KarLib/releases/tag/1)  
-Pobierz csr.zip z zakładki [Releases](https://github.com/ToRRent1812/cs-ranked-play/releases) i umieść na serverze w folderze /cstrike/addons/amxmodx/  
+Pobierz csr.zip z zakładki [Releases](https://github.com/ToRRent1812/cs-ranked-play/releases) i umieść na serwerze w folderze /cstrike/addons/amxmodx/  
 Otwórz server/cstrike/addons/amxmodx/configs/plugins.ini edytorem tekstu i na końcu pliku dodaj nową linię __csr.amxx__
 _____________________
 #### CVARY
-__rank_debug 0__ - Włącza dodatkowe logowanie  
+__rank_debug 0/1__ - Włącza dodatkowe logowanie  
 __rank_min_players 4__ - Minimalna ilość prawdziwych graczy by rozpocząć ranking na mapie  
 __rank_ideal_players 10__ - Idealna ilość graczy na serwerze (prawdziwi+boty) by zdobyć 100% MMR w meczu  
-__rank_min_minutes 5__ - Minimalna ilość minut jaką gracz musi zagrać by się liczyć w meczu rankingowym  
-__rank_score_cap 750__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
+__rank_min_minutes 5__ - Minimalna ilość minut jaką gracz musi zagrać, by się liczyć w meczu rankingowym  
+__rank_score_cap 1000__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
 __rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(nie MMR, punkty meczu)
-__rank_manual_scoring 1__ - Wyłącza automatyczne punkty meczu, więc musisz wtedy polegać na zewnętrznych pluginach używające natywów csr (csr_add_score/csr_set_score)  
+__rank_manual_scoring 0/1__ - 1=Wyłącza ukryty system punktowy, więc musisz wtedy polegać na zewnętrznych pluginach używające natywów csr (csr_add_score/csr_set_score)  
 __rank_warmup_time 45__ - Czas rozgrzewki  
 __rank_double_gain 0__ - Włącza podwójny zarobek MMR(użyteczne na happy hours/2xp weekendy)  
 __rank_karlib_port 8090__ - Port który serwer musi mieć otwarty, by wyświetlać wyniki  
