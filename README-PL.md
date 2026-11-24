@@ -15,11 +15,11 @@ Pod koniec meczu, gracze są sortowani przez WNM (Wynik Na Minutę)
 a później porównywani między sobą by obliczyć, ile MMR gracz otrzyma/straci  
 
 __Ocena obecności__ - Im więcej rund zagrasz, tym więcej punktów MMR dostaniesz/stracisz  
-__Anty-smurfing__ - Gracze nie mogą spaść z MMR bardziej niż 50% swojego najlepszego rezultatu  
+__Anty-smurfing__ - Po grach kwalifikacyjnych gracz nie może spaść poniżej 50% swojego najwyższego MMR w sezonie.  
 __Tarcza__ - Gracz traci mniej MMR na niższych rangach, mniej irytujące dla każuali  
 __Gry kwalifikacyjne__ - Gracz musi rozegrać 8 meczy by otrzymać rangę  
 __Sezony__ - Każdy sezon ma niezależny ranking  
-__Anty-ragequit__ - Jeżeli gracz wyjdzie z serwera, jego statystyki zostaną zapisane dopóki nie zmieni się mapa, lub dopóki nie wróci na serwer
+__Anty-ragequit__ - Jeżeli gracz wyjdzie z serwera, jego statystyki zostaną zapisane dopóki nie zmieni się mapa, lub dopóki nie wróci na serwer  
 Dane z poprzednich sezonów są zachowane w bazie danych. Admini serwera mogą uruchomić nowy sezon rankingowy w dowolnym dniu wpisując komendę.
 _____________________
 #### SCREENY
@@ -31,19 +31,20 @@ _____________________
 _____________________
 #### UKRYTY SYSTEM PUKTOWY
 
-1 pkt obrażeń = 1 punkt  
-+20 Headshot/noż/granat/pistoletowe zabójstwo  
-20% bonus za zadanie obrażeń ze słabej broni  
-+20 zabójstwo z dystansu  
-+200 Podłożenie bomby  
-+300 Rozbrojenie bomby  
-+125 Uratowanie zakładnika  
--150 Zabójstwo zakładnika  
-+50 Wygranie rundy  
--35 Przegranie rundy  
--50 Śmierć  
--100 Zabójstwo sojusznika  
-10*seria Bonus za wielokrotne zabójstwa aż do EJSA
+1 punkt za 10 zadanych obrażeń  
+2 punkty za 10 obrażeń ze słabej broni  
+-1 punkt za 20 obrażeń zadanych sojusznikowi  
++5 Headshot/noż/granat/pistoletowe zabójstwo  
++2 zabójstwo z dystansu  
++20 Podłożenie bomby  
++30 Rozbrojenie bomby  
++15 Uratowanie zakładnika  
+-15 Zabójstwo zakładnika  
++25 Wygranie rundy  
+-15 Przegranie rundy  
+-10 Śmierć  
+-20 Zabójstwo sojusznika  
+1*seria Bonus za wielokrotne zabójstwa aż do +10
   
 #### Modyfikatory WNM 
 Te zmienne modifykują WNM na końcu meczu 
@@ -78,17 +79,18 @@ Otwórz server/cstrike/addons/amxmodx/configs/plugins.ini edytorem tekstu i na k
 _____________________
 #### CVARY
 __rank_debug 0/1__ - Włącza dodatkowe logowanie  
-__rank_min_players 4__ - Minimalna ilość prawdziwych graczy by rozpocząć ranking na mapie  
+__rank_min_players 4__ - Minimalna ilość prawdziwych graczy by rozpocząć ranking na mapie.  
 __rank_ideal_players 10__ - Idealna ilość graczy na serwerze (prawdziwi+boty) by zdobyć 100% MMR w meczu  
 __rank_min_minutes 5__ - Minimalna ilość minut jaką gracz musi zagrać, by się liczyć w meczu rankingowym  
-__rank_score_cap 1000__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
+__rank_score_cap 250__ - Maksymalna ilość punktów jaką gracz może zdobyć w 1 rundzie  
 __rank_match_win_bonus 0__ - Pozwala dodać wygranej drużynie dodatkowe punkty(nie MMR, punkty meczu)
 __rank_manual_scoring 0/1__ - 1=Wyłącza ukryty system punktowy, więc musisz wtedy polegać na zewnętrznych pluginach używające natywów csr (csr_add_score/csr_set_score)  
 __rank_warmup_time 45__ - Czas rozgrzewki  
 __rank_double_gain 0__ - Włącza podwójny zarobek MMR(użyteczne na happy hours/2xp weekendy)  
+__rank_loyalty_bonus 1__ - Dodaje bonus lojalnym graczom. Co 20 rozegranych map, bonus rośnie o +1 MMR  
 __rank_karlib_port 8090__ - Port który serwer musi mieć otwarty, by wyświetlać wyniki  
 __rank_motd_host__ - Pozwala podmienić adres IP jeżeli strony HTML nie wyświetlają się  
-__rank_longmatch_minutes 45__ - Ile minut gracz musi spędzić w meczu by otrzymać bonus 20% do MMR w zamian za poświęcenie w długiej grze  
+__rank_longmatch_minutes 45__ - Ile minut gracz musi spędzić w meczu by otrzymać bonus 25% do MMR w zamian za poświęcenie w długiej grze  
 __rank_db_type sqlite__ - Metoda zapisu danych: "sqlite" lub "mariadb"  
 __rank_db_host localhost__ - MariaDB host  
 __rank_db_user CSR__ - MariaDB użytkownik  
@@ -97,7 +99,7 @@ __rank_db_name CSR__ - MariaDB nazwa bazy
 _____________________
 #### KOMENDY ADMINA
 __amx_rank_adjust <steamid> <ilość>__ - Dodaj/odejmij graczowi MMR  
-__amx_rank_recalc__ - Wymuś koniec meczu rankingowego  
+__amx_rank_recalc__ - Wymuś obliczenie wyników meczu (bez zmiany mapy)  
 __amx_rank_cancel__ - Anuluj aktualny mecz rankingowy na mapie  
 __amx_rank_status__ - Wyświetl w konsoli aktualny stan graczy  
 __amx_rank_newseason__ - Rozpocznij nowy sezon rankingowy  
